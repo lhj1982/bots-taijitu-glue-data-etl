@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Service role for access kinesis stream in application account for bots-taijitu
+  stackName=bots-taijitu-application-account-resources
+Mappings:
+  AccountMap:
+    # China Prod
+    "734147128161":
+      OscarApiArn: "arn:aws-cn:execute-api:*:180957259698:*"
+      OktaAdminRole: "arn:aws-cn:iam::734147128161:role/NIKE.SSO.AdminRole"
+    # China Test
+    "734176943427":
+      OscarApiArn: "arn:aws-cn:execute-api:*:693031048477:*"
+      OktaAdminRole: "arn:aws-cn:iam::734176943427:role/NIKE.SSO.AdminRole"
+Resources:
+  APIServiceIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: bots-taijitu-crossaccount-stream-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: '/'
+      Policies:
+        - PolicyName: bots-taijitu-crossaccount-stream-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ReadStream
+                Effect: Allow
+                Action:
+                  - kinesis:DescribeStreamSummary
+                  - kinesis:GetShardIterator
+                  - kinesis:GetRecords
+                  - kinesis:DescribeStream
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:kinesis:${AWS::Region}:${AWS::AccountId}:stream/launch-entry-eda-data-stream/*'
+              - Sid: ListStream
+                Effect: Allow
+                Action:
+                  - kinesis:ListStreams
+                  - kinesis:ListShards
+                Resource:
+                  - '*'
