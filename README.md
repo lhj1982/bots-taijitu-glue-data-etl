@@ -1,3 +1,38 @@
+# Deploy and debug in local
+Reference: https://towardsaws.com/how-to-run-aws-glue-jobs-locally-using-visual-studio-code-vs-code-127a9bb10bd1
+## Prerequisites
+awscli, docker vs code
+
+## Setup
+* AWS profile which is able to read S3
+```
+export AWS_PROFILE=<your-profile-name>
+```
+* Pull docker image
+```
+docker pull amazon/aws-glue-libs:glue_libs_4.0.0_image_01
+```
+* setup vs code, update workspace setting.json file
+```
+{
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "python.analysis.extraPaths": [
+        "/home/glue_user/aws-glue-libs/PyGlue.zip:/home/glue_user/spark/python/lib/py4j-0.10.9-src.zip:/home/glue_user/spark/python/",
+    ]
+}
+```
+* Run docker container
+```
+export PROFILE_NAME=<name-of-your-aws-profile>
+export WORKSPACE_LOCATION=$(pwd)
+
+docker run -it -v ~/.aws:/home/glue_user/.aws -v $WORKSPACE_LOCATION:/home/glue_user/workspace/ -e AWS_PROFILE=$PROFILE_NAME -e DISABLE_SSL=true --rm -p 4040:4040 -p 18080:18080 --name glue_pyspark amazon/aws-glue-libs:glue_libs_4.0.0_image_01 pyspark
+
+```
+
+
+
+
 # Put record to kinesis
 ```
 aws kinesis put-record --stream-name launch-entry-eda-data-stream --partition-key 1 \
