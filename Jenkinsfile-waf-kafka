@@ -1,0 +1,92 @@
+#!groovy
+@Library('cicd-pipeline') _
+
+def buildImage = 'artifactory.nike.com:9002/amazon/aws-cli:latest'
+
+def config = [
+
+    customBuildParameters: [
+        string(
+            name: 'SCRIPT_LOCAL_PATH',
+            defaultValue: './etl-waf-kafka/',
+            description: 'the etl script location in your project'
+        ),
+        string(
+            name: 'SCRIPT_S3_PATH',
+            defaultValue: 's3://bot-taijitu-etl-script/waf-kafka/',
+            description: 'the etl script location in s3, example - s3://my-bucket/folder/script.txt'
+        ),
+    ]
+
+    usePraDispatch: false,
+    buildFlow: [
+        DEPLOY_TEST: ['Build'],
+        DEPLOY_PROD: ['Build'],
+    ],
+    branchMatcher: [
+        DEPLOY_TEST: ['main']
+    ],
+    qma : [configFile: 'quality-config.yaml'],
+    deploymentEnvironment:  [
+        'cntest': [
+            agentLabel      : 'china',
+            deployFlow: [
+                DEPLOY_TEST: ['Deploy'],
+            ],
+            cloudEnvironment: 'cntest',
+            tags: [
+                'Name': 'bots-taijitu-glue-waf-kafka',
+                'costcenter': '161961',
+                'classification': 'sliver',
+                'email': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'owner': 'gc-cdn-antibots',
+                'nike-department': 'platform engineering - gc launch',
+                'nike-domain': 'gc-cdn-antibots',
+                'nike-application': 'bots-taijitu-glue-waf-kafka',
+                'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'nike-owner': 'frank.zhao@nike.com',
+                'nike-environment': 'cntest',
+            ],
+            deployCommand: [
+                aws: [
+                    roleAccount: '439314357471',
+                    role: 'NIKE.cicd.tool',
+                    region: 'cn-northwest-1',
+                ],
+                image: buildImage,
+                cmd: "aws s3 cp ${params.SCRIPT_LOCAL_PATH} ${params.SCRIPT_S3_PATH}",
+            ]
+        ],
+        'cnprod': [
+            agentLabel      : 'china',
+            deployFlow: [
+                DEPLOY_PROD: ['Deploy'],
+            ],
+            cloudEnvironment: 'cnprod',
+            tags: [
+                'Name': 'bots-taijitu-glue-waf-kafka',
+                'costcenter': '161961',
+                'classification': 'sliver',
+                'email': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'owner': 'gc-cdn-antibots',
+                'nike-department': 'platform engineering - gc launch',
+                'nike-domain': 'gc-cdn-antibots',
+                'nike-application': 'bots-taijitu-glue-waf-kafka',
+                'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'nike-owner': 'frank.zhao@nike.com',
+                'nike-environment': 'cnprod',
+            ],
+            deployCommand: [
+                aws: [
+                    roleAccount: '439413396736',
+                    role: 'NIKE.cicd.tool',
+                    region: 'cn-northwest-1',
+                ],
+                image: buildImage,
+                cmd: "aws s3 cp ${params.SCRIPT_LOCAL_PATH} ${params.SCRIPT_S3_PATH}",
+            ]
+        ]
+    ]
+]
+
+genericDeployPipeline(config)
