@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Service s3 for glue data center account for bots-taijitu
+  stackName=bots-taijitu-data-account-s3-resources
+Parameters:
+  ENV:
+    Type: String
+    Default: "test"
+    AllowedValues:
+      - "test"
+      - "prod"
+    Description: "The environment to deploy the stack to"
+Mappings:
+  AccountMap:
+    # China Prod
+    "prod":
+      AssumeIAMRoleArn: "arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role"
+    # China Test
+    "test":
+      AssumeIAMRoleArn: "arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role"
+  ResourceTagMap:
+    NikeStandardTags:
+      "application": "bots-taijitu-data-etl"
+      "department": "Web Eng - nike.com Cloud Capability"
+      "domain": "DTC - CiC Bots"
+      "owner": "frank.zhao@nike.com"
+      "distributionlist": "Lst-gc-cdn-antibots.admin@nike.com"
+      "environment": "prod"
+      "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
+Resources:
+  DataS3LocationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'bots-taijitu-${ENV}-${AWS::AccountId}-flatted-data'
+      Tags:
+        - Key: "nike-tagguid"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, tagguid]
+        - Key: "nike-application"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, application]
+        - Key: "nike-department"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, department]
+        - Key: "nike-owner"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, owner]
+        - Key: "nike-distributionlist"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, distributionlist]
+        - Key: "nike-environment"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, environment]
+        
+  DataS3LocationBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DataS3LocationBucket
+      PolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws-cn:iam::734176943427:root'
+            Action: 
+              - 's3:*'
+            Resource: 
+              - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}/*'

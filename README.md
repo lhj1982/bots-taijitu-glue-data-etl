@@ -1,3 +1,27 @@
+# Introduction
+The project contains several glue etl job definitions that read data from different sources (kinesis, kafka, s3 etc) to save them in the centralized S3 bucket in data account.
+
+## Setup
+* run application_account_resource.yaml in source aws account
+* run data_account_resource.yaml in target data account
+* run data_s3_resource.yaml in target data account
+
+## Kinesis connection
+Deploy glue etl job in the same account as kds is located
+
+## Kafka connection
+
+## Key Resources
+All processed data should be saved under LITX aws account, 
+
+# Deploy glue job using aws cli
+Upload py file to S3 bucket
+
+```
+aws glue create-job --name python-redshift-test-cli --role role --command '{"Name" :  "pythonshell", "ScriptLocation" : "s3://MyBucket/python/library/redshift_test.py"}' 
+     --connections Connections=connection-name --default-arguments '{"--extra-py-files" : ["s3://DOC-EXAMPLE-BUCKET/EGG-FILE", "s3://DOC-EXAMPLE-BUCKET/WHEEL-FILE"]}'
+```
+
 # Deploy and debug in local
 Reference: https://towardsaws.com/how-to-run-aws-glue-jobs-locally-using-visual-studio-code-vs-code-127a9bb10bd1
 ## Prerequisites
@@ -31,6 +55,11 @@ docker run -it -v ~/.aws:/home/glue_user/.aws -v $WORKSPACE_LOCATION:/home/glue_
 ```
 
 
+
+Convert ipynb to python script
+```
+jupyter nbconvert --to script *.ipynb
+```
 
 
 # Put record to kinesis
