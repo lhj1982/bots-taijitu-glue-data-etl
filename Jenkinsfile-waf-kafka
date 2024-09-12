@@ -7,12 +7,12 @@ def config = [
 
     customBuildParameters: [
         string(
-            name: 'SCRIPT_LOCAL_PATH',
+            name: 'ScriptLocalPath',
             defaultValue: './etl-waf-kafka/',
             description: 'the etl script location in your project'
         ),
         string(
-            name: 'SCRIPT_S3_PATH',
+            name: 'ScriptS3Path',
             defaultValue: 's3://bot-taijitu-etl-script/waf-kafka/',
             description: 'the etl script location in s3, example - s3://my-bucket/folder/script.txt'
         ),
@@ -53,7 +53,7 @@ def config = [
                     region: 'cn-northwest-1',
                 ],
                 image: buildImage,
-                cmd: "aws s3 cp ${params.SCRIPT_LOCAL_PATH} ${params.SCRIPT_S3_PATH}",
+                cmd: "aws s3 cp ${params.CUSTOM_ScriptLocalPath} ${params.CUSTOM_ScriptS3Path}",
             ]
         ],
         'cnprod': [
@@ -82,7 +82,7 @@ def config = [
                     region: 'cn-northwest-1',
                 ],
                 image: buildImage,
-                cmd: "aws s3 cp ${params.SCRIPT_LOCAL_PATH} ${params.SCRIPT_S3_PATH}",
+                cmd: "aws s3 cp ${params.CUSTOM_SCRIPT_LOCAL_PATH} ${params.CUSTOM_SCRIPT_S3_PATH}",
             ]
         ]
     ]
