@@ -5,14 +5,14 @@ Metadata:
   Stackname: 'bots-taijitu-waf-kafka-job-resource'
 
 Parameters:
-  ENV:
+  Env:
     Type: String
     Default: "test"
     AllowedValues:
       - "test"
       - "prod"
     Description: "The environment to deploy the stack to"
-  SCRIPT_S3_PATH:
+  ScriptS3Path:
     Type: String
     Default: ""
     Description: "the S3 location of script"
@@ -41,14 +41,14 @@ Resources:
         nike-department: !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
         nike-owner: !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
         nike-distributionlist: !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
-        nike-environment: !Ref ENV
+        nike-environment: !Ref Env
       Role: bots-taijitu-glue-runtime-service-role
       Command:
         Name: gluestreaming
-        ScriptLocation: !Ref SCRIPT_S3_PATH
+        ScriptLocation: !Ref ScriptS3Path
         PythonVersion: '3'
       DefaultArguments:
-        "--extra-files": !FindInMap [ ResourceTagMap, ExtraFiles, !Ref ENV ]
+        "--extra-files": !FindInMap [ ResourceTagMap, ExtraFiles, !Ref Env ]
       GlueVersion: '4.0'
       WorkerType: G.1X
       NumberOfWorkers: 2

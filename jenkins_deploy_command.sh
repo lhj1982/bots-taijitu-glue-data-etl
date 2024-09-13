@@ -1,39 +1,40 @@
 #!/bin/bash
 
-SCRIPT_LOCAL_PATH="$1"
-SCRIPT_S3_PATH="$2"
-TEMPLATE_FILE="$3"
-STACK_NAME="$4"
-ENV="$5"
+ScriptLocalPath="$1"
+ScriptS3Path="$2"
+TemplateFile="$3"
+StackName="$4"
+Env="$5"
 
-echo "script local path: $SCRIPT_LOCAL_PATH"
-echo "script s3 path: $SCRIPT_S3_PATH"
-echo "cloudformation file path: $TEMPLATE_FILE"
-echo "stack name: $STACK_NAME"
-echo "selected env: $ENV"
-
-
-aws s3 cp "$SCRIPT_LOCAL_PATH" "$SCRIPT_S3_PATH"
+echo "script local path: $ScriptLocalPath"
+echo "script s3 path: $SCRIPTS3PATH"
+echo "cloudformation file path: $TemplateFile"
+echo "stack name: $StackName"
+echo "selected Env: $Env"
 
 
-describe_stacks_output=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" 2>/dev/null)
+aws s3 cp "$ScriptLocalPath" "$SCRIPTS3PATH"
+
+
+describe_stacks_output=$(aws cloudformation describe-stacks --stack-name "$StackName" 2>/dev/null)
 
 if [ $? -eq 0 ]; then
   # update cloudformation stack
-  echo "Updating stack: $STACK_NAME"
+  echo "Updating stack: $StackName"
   aws cloudformation update-stack \
     --region cn-northwest-1 \
-    --stack-name "$STACK_NAME" \
-    --template-body "file://$TEMPLATE_FILE" \
-    --parameters ParameterKey=ENV,ParameterValue="$ENV" ParameterKey=SCRIPT_S3_PATH,ParameterValue="$SCRIPT_S3_PATH" \
+    --stack-name "$StackName" \
+    --template-body "file://$TemplateFile" \
+    --parameters ParameterKey=Env,ParameterValue="$Env" ParameterKey=ScriptS3Path,ParameterValue="$ScriptS3Path" \
 
 else
   # create cloudformation stack
-  echo "Creating new stack: $STACK_NAME"
+  echo "Creating new stack: $StackName"
   aws cloudformation create-stack \
     --region cn-northwest-1 \
-    --stack-name "$STACK_NAME" \
-    --template-body "file://$TEMPLATE_FILE" \
-    --parameters ParameterKey=ENV,ParameterValue="$ENV" ParameterKey=SCRIPT_S3_PATH,ParameterValue="$SCRIPT_S3_PATH" \
+    --stack-name "$StackName" \
+    --template-body "file://$TemplateFile" \
+    --parameters ParameterKey=Env,ParameterValue="$Env"\
+                 ParameterKey=ScriptS3Path,ParameterValue="$ScriptS3Path" \
 
 fi
