@@ -35,4 +35,5 @@ else
     --stack-name "$STACK_NAME" \
     --template-body "file://$TEMPLATE_FILE" \
     --parameters ParameterKey=ENV,ParameterValue="$ENV" ParameterKey=SCRIPT_S3_PATH,ParameterValue="$SCRIPT_S3_PATH" \
+
 fi
