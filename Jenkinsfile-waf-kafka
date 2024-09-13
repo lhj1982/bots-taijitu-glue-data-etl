@@ -42,7 +42,7 @@ def config = [
                 image: buildImage,
                 cmd: "bash jenkins_deploy_command.sh \
                         ./etl-waf-kafka/waf_entry.py \
-                        s3://bot-taijitu-etl-script/waf-kafka/waf_entry.py \
+                        s3://bot-taijitu-etl-script-test/etl-waf-kafka/waf_entry.py \
                         ./cloudformation/waf_kafka_resource.yaml \
                         bots-taijitu-waf-kafka-job \
                         test",
