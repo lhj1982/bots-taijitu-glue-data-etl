@@ -4,19 +4,6 @@
 def buildImage = 'artifactory.nike.com:9002/amazon/aws-cli:latest'
 
 def config = [
-
-    customBuildParameters: [
-        string(
-            name: 'ScriptLocalPath',
-            defaultValue: './etl-waf-kafka/',
-            description: 'the etl script location in your project'
-        ),
-        string(
-            name: 'ScriptS3Path',
-            defaultValue: 's3://bot-taijitu-etl-script/waf-kafka/',
-            description: 'the etl script location in s3, example - s3://my-bucket/folder/script.txt'
-        ),
-    ],
     usePraDispatch: false,
     buildFlow: [
         DEPLOY_TEST: ['Build'],
@@ -53,7 +40,11 @@ def config = [
                     region: 'cn-northwest-1',
                 ],
                 image: buildImage,
-                cmd: "aws s3 cp ${params.CUSTOM_ScriptLocalPath} ${params.CUSTOM_ScriptS3Path}",
+                cmd: "bash jenkins_deploy_command.sh \
+                        ./etl-waf-kafka/waf_entry.py \
+                        s3://bot-taijitu-etl-script/waf-kafka/waf_entry.py \
+                        ./cloudformation/waf_kafka_resource.yaml \
+                        bots-taijitu-waf-kafka-job test",
             ]
         ],
         'cnprod': [

@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  cloudformation for bots-taijitu-waf-kafka-job
+Metadata:
+  Stackname: 'bots-taijitu-waf-kafka-job-resource'
+
+Parameters:
+  ENV:
+    Type: String
+    Default: "test"
+    AllowedValues:
+      - "test"
+      - "prod"
+    Description: "The environment to deploy the stack to"
+  SCRIPT_S3_PATH:
+    Type: String
+    Default: ""
+    Description: "the S3 location of script"
+Mappings:
+  ResourceTagMap:
+    NikeStandardTags:
+      "application": "bots-taijitu-data-etl"
+      "department": "Web Eng - nike.com Cloud Capability"
+      "domain": "DTC - CiC Bots"
+      "owner": "frank.zhao@nike.com"
+      "distributionlist": "Lst-gc-cdn-antibots.admin@nike.com"
+      "environment": "prod"
+      "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
+
+Resources:
+  WafKafkaJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: bots-taijitu-waf-kafka-job
+      Tags:
+        nike-tagguid: !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
+        nike-application: !FindInMap [ ResourceTagMap, NikeStandardTags, application ]
+        nike-department: !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
+        nike-owner: !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
+        nike-distributionlist: !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
+        nike-environment: !Ref ENV
+      Role: bots-taijitu-glue-runtime-service-role
+      Command:
+        Name: gluestreaming
+        ScriptLocation: !Ref SCRIPT_S3_PATH
+        PythonVersion: '3'
+      DefaultArguments:
+        "--extra-files": "s3://bot-taijitu-etl-script/etl-waf-kafka/mix.4096.client.truststore.jks"
+      GlueVersion: '4.0'
+      WorkerType: G.1X
+      NumberOfWorkers: 2
