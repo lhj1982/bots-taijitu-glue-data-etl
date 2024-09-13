@@ -3,6 +3,8 @@ from pyspark.sql.functions import from_json, regexp_extract, col
 from pyspark.sql.types import StructType, StructField, StringType
 from pyspark import SparkFiles
 
+print("test deploy")
+
 spark = SparkSession.builder.appName("taijituTest").getOrCreate()
 
 kafka_params = {

@@ -50,5 +50,5 @@ Resources:
       DefaultArguments:
         "--extra-files": !FindInMap [ ResourceTagMap, ExtraFiles, !Ref Env ]
       GlueVersion: '4.0'
-      WorkerType: G.1X
+      WorkerType: G.0.25X
       NumberOfWorkers: 2
