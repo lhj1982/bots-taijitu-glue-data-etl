@@ -18,8 +18,18 @@ All processed data should be saved under LITX aws account,
 Upload py file to S3 bucket
 
 ```
-aws glue create-job --name python-redshift-test-cli --role role --command '{"Name" :  "pythonshell", "ScriptLocation" : "s3://MyBucket/python/library/redshift_test.py"}' 
-     --connections Connections=connection-name --default-arguments '{"--extra-py-files" : ["s3://DOC-EXAMPLE-BUCKET/EGG-FILE", "s3://DOC-EXAMPLE-BUCKET/WHEEL-FILE"]}'
+JOB_NAME=xxx
+JOB_ROLE=arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role
+TempDir=s3://aws-glue-assets-734176943427-cn-northwest-1/temporary/
+OutputDir=s3://bots-taijitu-test-439314357471-flatted-data
+aws glue create-job --name ${JOB_NAME} --profile CommerceGCTest \
+--role ${JOB_ROLE} \
+--command '{"Name" :  "gluestreaming", "ScriptLocation" : "s3://aws-glue-assets-734176943427-cn-northwest-1/scripts/kinesis_handler.py", "PythonVersion": "3"}' \
+--tags '{"nike-tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"}' \
+--glue-version 4.0 \
+--number-of-workers 2 \
+--worker-type G.1X \
+--default-arguments '{"--enable-glue-datacatalog" : "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}'
 ```
 
 # Deploy and debug in local
@@ -58,7 +68,7 @@ docker run -it -v ~/.aws:/home/glue_user/.aws -v $WORKSPACE_LOCATION:/home/glue_
 
 Convert ipynb to python script
 ```
-jupyter nbconvert --to script *.ipynb
+jupyter nbconvert --to python *.ipynb
 ```
 
 
@@ -252,7 +262,6 @@ aws kinesis put-record --stream-name launch-entry-eda-data-stream --partition-ke
     --profile CommerceGCTest \
     --region cn-northwest-1
 ```
-
 
 ## Update
 ```
