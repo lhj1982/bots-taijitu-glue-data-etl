@@ -2,9 +2,24 @@
 The project contains several glue etl job definitions that read data from different sources (kinesis, kafka, s3 etc) to save them in the centralized S3 bucket in data account.
 
 ## Setup
+### Prerequisites
+awscli, jupyter notebook, python3+, gimme-aws-cred, make cli
+### Steps
 * run application_account_resource.yaml in source aws account
 * run data_account_resource.yaml in target data account
 * run data_s3_resource.yaml in target data account
+* make sure variables in Makefile is correct
+* Run the following command
+```
+// generate aws token
+make generate-aws-credentials-test|prod
+// convert jupyter notebook to python script
+make convert-to-python
+// create new job
+make create-job-test|prod
+// update job
+make update-job-test|prod
+```
 
 ## Kinesis connection
 Deploy glue etl job in the same account as kds is located
@@ -12,7 +27,7 @@ Deploy glue etl job in the same account as kds is located
 ## Kafka connection
 
 ## Key Resources
-All processed data should be saved under LITX aws account, 
+All processed data should be saved under LITX aws account
 
 # Deploy glue job using aws cli
 Upload py file to S3 bucket
@@ -32,7 +47,7 @@ aws glue create-job --name ${JOB_NAME} --profile CommerceGCTest \
 --default-arguments '{"--enable-glue-datacatalog" : "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}'
 ```
 
-# Deploy and debug in local
+# Deploy and debug in local (Not Working)
 Reference: https://towardsaws.com/how-to-run-aws-glue-jobs-locally-using-visual-studio-code-vs-code-127a9bb10bd1
 ## Prerequisites
 awscli, docker vs code
@@ -64,15 +79,13 @@ docker run -it -v ~/.aws:/home/glue_user/.aws -v $WORKSPACE_LOCATION:/home/glue_
 
 ```
 
-
-
 Convert ipynb to python script
 ```
 jupyter nbconvert --to python *.ipynb
 ```
 
-
-# Put record to kinesis
+# Testing
+## Put record to kinesis
 ```
 aws kinesis put-record --stream-name launch-entry-eda-data-stream --partition-key 1 \
     --data "<base64 encoded string>" \
@@ -124,7 +137,7 @@ Launch entry example in ddb
 
 a ddb stream event looks like
 
-## Insert
+### Insert
 ```
 {
   "awsRegion": "cn-northwest-1",
@@ -263,12 +276,12 @@ aws kinesis put-record --stream-name launch-entry-eda-data-stream --partition-ke
     --region cn-northwest-1
 ```
 
-## Update
+### Update
 ```
 {"awsRegion":"cn-northwest-1","eventID":"fd5772af-6b44-408a-a66b-e05b64c816a4","eventName":"MODIFY","userIdentity":null,"recordFormat":"application/json","tableName":"launch.winnerselector.entry","dynamodb":{"ApproximateCreationDateTime":1725932134565,"Keys":{"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"}},"NewImage":{"userAgent":{"S":"SNKRS/6.6.0 (prod; 2407181638; iOS 16.6.1; iPhone13,4)"},"traceContext":{"S":"v1:9655238fd3131624:702c742b47e20b6a:1"},"currency":{"S":"CNY"},"launchSkuStatusValidation":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER:VALID"},"reservationJobId":{"S":"ed9a9e59-f6b9-4b9c-93ee-de211e628c66"},"userType":{"S":"nike:plus"},"status":{"S":"WINNER"},"retailPickupPerson":{"S":"null"},"skuId":{"S":"8b91811a-95ec-5099-ad5f-c25f1a4ca601"},"launchId":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892"},"channel":{"S":"SNKRS"},"geolocation":{"S":"null"},"shipping":{"S":"{\"recipient\":{\"firstName\":\"文杰\",\"lastName\":\"盛\",\"phoneNumber\":\"18112885616\"},\"address\":{\"address1\":\"荷花池街道荷花池公寓19-6号\",\"city\":\"常州市\",\"state\":\"CN-32\",\"postalCode\":\"213000\",\"country\":\"CN\",\"county\":\"钟楼区\"},\"method\":null,\"getBy\":{\"maxDate\":{\"dateTime\":\"2024-09-09T02:25:01.582Z\",\"timezone\":\"Asia/Shanghai\",\"precision\":\"DAY\"}}}"},"paymentToken":{"S":"37086c07-d868-4a0f-a83e-769e9e6270ff"},"postpayRetry":{"BOOL":false},"paymentStatus":{"S":"PENDING_PAYMENT"},"selectedTimestamp":{"N":"1725238925578"},"upmId":{"S":"03c3403f-7d54-48f3-8ddb-f27d1ce611dd"},"reservationId":{"S":"P26cbda24e98d4bcdb75927a557df9b3d"},"creationTimestamp":{"N":"1725238816172"},"waitingReason":{"NULL":true},"totals":{"S":"{\"items\":{\"total\":1099.0,\"details\":{\"price\":1099.0,\"discount\":0.0}},\"taxes\":{\"details\":{\"items\":{\"type\":\"NOT_CALCULATED\"}}},\"fulfillment\":{\"total\":0.0,\"details\":{\"price\":0.0,\"discount\":0.0}}}"},"validationSummary":{"S":"{\"result\":\"VALID\"}"},"sort":{"N":"151212521"},"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"},"checkoutId":{"S":"d3e98748-94fe-476a-9097-24b9084a233d"},"locale":{"S":"zh_CN"},"trueClientIp":{"S":"114.227.98.25"},"postpayLink":{"S":"https://www.nike.com/omega"},"reservationTimestamp":{"N":"1725238922070"},"rank":{"N":"-1"},"reentryPermitted":{"BOOL":false},"forwardedFor":{"S":"114.227.98.25, 10.120.25.209, 58.222.47.172, 39.96.130.111"},"launchSkuStatus":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER"},"appId":{"S":"com.nike.commerce.snkrs.ios"}},"OldImage":{"userAgent":{"S":"SNKRS/6.6.0 (prod; 2407181638; iOS 16.6.1; iPhone13,4)"},"traceContext":{"S":"v1:9655238fd3131624:702c742b47e20b6a:1"},"currency":{"S":"CNY"},"launchSkuStatusValidation":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER:VALID"},"reservationJobId":{"S":"ed9a9e59-f6b9-4b9c-93ee-de211e628c66"},"userType":{"S":"nike:plus"},"status":{"S":"WINNER"},"retailPickupPerson":{"S":"null"},"skuId":{"S":"8b91811a-95ec-5099-ad5f-c25f1a4ca601"},"launchId":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892"},"channel":{"S":"SNKRS"},"geolocation":{"S":"null"},"shipping":{"S":"{\"recipient\":{\"firstName\":\"文杰22\",\"lastName\":\"盛\",\"phoneNumber\":\"18112885616\"},\"address\":{\"address1\":\"荷花池街道荷花池公寓19-6号\",\"city\":\"常州市\",\"state\":\"CN-32\",\"postalCode\":\"213000\",\"country\":\"CN\",\"county\":\"钟楼区\"},\"method\":null,\"getBy\":{\"maxDate\":{\"dateTime\":\"2024-09-09T02:25:01.582Z\",\"timezone\":\"Asia/Shanghai\",\"precision\":\"DAY\"}}}"},"paymentToken":{"S":"37086c07-d868-4a0f-a83e-769e9e6270ff"},"postpayRetry":{"BOOL":false},"paymentStatus":{"S":"PENDING_PAYMENT"},"selectedTimestamp":{"N":"1725238925578"},"upmId":{"S":"03c3403f-7d54-48f3-8ddb-f27d1ce611dd"},"reservationId":{"S":"P26cbda24e98d4bcdb75927a557df9b3d"},"creationTimestamp":{"N":"1725238816172"},"waitingReason":{"NULL":true},"totals":{"S":"{\"items\":{\"total\":1099.0,\"details\":{\"price\":1099.0,\"discount\":0.0}},\"taxes\":{\"details\":{\"items\":{\"type\":\"NOT_CALCULATED\"}}},\"fulfillment\":{\"total\":0.0,\"details\":{\"price\":0.0,\"discount\":0.0}}}"},"validationSummary":{"S":"{\"result\":\"VALID\"}"},"sort":{"N":"151212521"},"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"},"checkoutId":{"S":"d3e98748-94fe-476a-9097-24b9084a233d"},"locale":{"S":"zh_CN"},"trueClientIp":{"S":"114.227.98.25"},"postpayLink":{"S":"https://www.nike.com/omega"},"reservationTimestamp":{"N":"1725238922070"},"rank":{"N":"-1"},"reentryPermitted":{"BOOL":false},"forwardedFor":{"S":"114.227.98.25, 10.120.25.209, 58.222.47.172, 39.96.130.111"},"launchSkuStatus":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER"},"appId":{"S":"com.nike.commerce.snkrs.ios"}},"SizeBytes":3444},"eventSource":"aws:dynamodb"}
 ```
 
-## Delete
+### Delete
 ```
 {"awsRegion":"cn-northwest-1","eventID":"005d9251-8fa3-4ba0-a9d1-d6a074d7f990","eventName":"REMOVE","userIdentity":null,"recordFormat":"application/json","tableName":"launch.winnerselector.entry","dynamodb":{"ApproximateCreationDateTime":1725932144754,"Keys":{"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"}},"OldImage":{"userAgent":{"S":"SNKRS/6.6.0 (prod; 2407181638; iOS 16.6.1; iPhone13,4)"},"traceContext":{"S":"v1:9655238fd3131624:702c742b47e20b6a:1"},"currency":{"S":"CNY"},"launchSkuStatusValidation":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER:VALID"},"reservationJobId":{"S":"ed9a9e59-f6b9-4b9c-93ee-de211e628c66"},"userType":{"S":"nike:plus"},"status":{"S":"WINNER"},"retailPickupPerson":{"S":"null"},"launchId":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892"},"skuId":{"S":"8b91811a-95ec-5099-ad5f-c25f1a4ca601"},"channel":{"S":"SNKRS"},"geolocation":{"S":"null"},"shipping":{"S":"{\"recipient\":{\"firstName\":\"文杰\",\"lastName\":\"盛\",\"phoneNumber\":\"18112885616\"},\"address\":{\"address1\":\"荷花池街道荷花池公寓19-6号\",\"city\":\"常州市\",\"state\":\"CN-32\",\"postalCode\":\"213000\",\"country\":\"CN\",\"county\":\"钟楼区\"},\"method\":null,\"getBy\":{\"maxDate\":{\"dateTime\":\"2024-09-09T02:25:01.582Z\",\"timezone\":\"Asia/Shanghai\",\"precision\":\"DAY\"}}}"},"paymentToken":{"S":"37086c07-d868-4a0f-a83e-769e9e6270ff"},"postpayRetry":{"BOOL":false},"paymentStatus":{"S":"PENDING_PAYMENT"},"selectedTimestamp":{"N":"1725238925578"},"upmId":{"S":"03c3403f-7d54-48f3-8ddb-f27d1ce611dd"},"reservationId":{"S":"P26cbda24e98d4bcdb75927a557df9b3d"},"creationTimestamp":{"N":"1725238816172"},"waitingReason":{"NULL":true},"totals":{"S":"{\"items\":{\"total\":1099.0,\"details\":{\"price\":1099.0,\"discount\":0.0}},\"taxes\":{\"details\":{\"items\":{\"type\":\"NOT_CALCULATED\"}}},\"fulfillment\":{\"total\":0.0,\"details\":{\"price\":0.0,\"discount\":0.0}}}"},"validationSummary":{"S":"{\"result\":\"VALID\"}"},"sort":{"N":"151212521"},"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"},"checkoutId":{"S":"d3e98748-94fe-476a-9097-24b9084a233d"},"locale":{"S":"zh_CN"},"trueClientIp":{"S":"114.227.98.25"},"postpayLink":{"S":"https://www.nike.com/omega"},"reservationTimestamp":{"N":"1725238922070"},"rank":{"N":"-1"},"reentryPermitted":{"BOOL":false},"forwardedFor":{"S":"114.227.98.25, 10.120.25.209, 58.222.47.172, 39.96.130.111"},"launchSkuStatus":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER"},"appId":{"S":"com.nike.commerce.snkrs.ios"}},"SizeBytes":1740},"eventSource":"aws:dynamodb"}
 ```

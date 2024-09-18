@@ -15,7 +15,7 @@ Mappings:
   AccountMap:
     # China Prod
     "prod":
-      DataAccountS3Arn: "arn:aws-cn:s3:::bots-taijitu-test-439314357471-flatted-data"
+      DataAccountS3Arn: "arn:aws-cn:s3:::bots-taijitu-prod-439413396736-flatted-data"
     # China Test
     "test":
       DataAccountS3Arn: "arn:aws-cn:s3:::bots-taijitu-test-439314357471-flatted-data"
@@ -62,6 +62,7 @@ Resources:
                   - kinesis:GetRecords
                   - kinesis:DescribeStream
                 Resource:
+                  - !Sub 'arn:${AWS::Partition}:kinesis:${AWS::Region}:${AWS::AccountId}:stream/launch-entry-eda-data-stream'
                   - !Sub 'arn:${AWS::Partition}:kinesis:${AWS::Region}:${AWS::AccountId}:stream/launch-entry-eda-data-stream/*'
               - Sid: ListStream
                 Effect: Allow
@@ -107,3 +108,10 @@ Resources:
           Value: !FindInMap [ResourceTagMap, NikeStandardTags, distributionlist]
         - Key: "nike-environment"
           Value: !FindInMap [ResourceTagMap, NikeStandardTags, environment]
+Outputs:
+  GlueInteractiveIAMRoleArn:
+    Description: "The ARN of the Glue etl job IAM Role"
+    Value: !GetAtt GlueInteractiveIAMRole.Arn
+  GlueInteractiveIAMRoleName:
+    Description: "The name of the Glue etl job IAM Role"
+    Value: !Ref GlueInteractiveIAMRole

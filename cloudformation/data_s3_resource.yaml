@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   Service s3 for glue data center account for bots-taijitu
+  A s3 bucket to save all processed data from different sources, defined necessary permission for this bucket, in case it need cross-account write access
   stackName=bots-taijitu-data-account-s3-resources
 Parameters:
   ENV:
@@ -14,7 +15,7 @@ Mappings:
   AccountMap:
     # China Prod
     "prod":
-      AssumeIAMRoleArn: "arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role"
+      AssumeIAMRoleArn: "arn:aws-cn:iam::734147128161:role/bots-taijitu-glue-etl-role"
     # China Test
     "test":
       AssumeIAMRoleArn: "arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role"
@@ -55,9 +56,16 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: 'arn:aws-cn:iam::734176943427:root'
+              AWS: !FindInMap [AccountMap, !Ref ENV, AssumeIAMRoleArn]
             Action: 
               - 's3:*'
             Resource: 
               - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}'
               - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}/*'
+Outputs:
+  DataS3LocationBucketArn:
+    Value: !GetAtt DataS3LocationBucket.Arn
+    Description: "The ARN of the s3 bucket for storing processed data"
+  DataS3LocationBucketName:
+    Value: !Ref DataS3LocationBucket
+    Description: "The name of the s3 bucket for storing processed data"
