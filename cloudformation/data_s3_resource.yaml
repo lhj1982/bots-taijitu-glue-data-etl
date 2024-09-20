@@ -46,7 +46,6 @@ Resources:
           Value: !FindInMap [ResourceTagMap, NikeStandardTags, distributionlist]
         - Key: "nike-environment"
           Value: !FindInMap [ResourceTagMap, NikeStandardTags, environment]
-        
   DataS3LocationBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -62,6 +61,24 @@ Resources:
             Resource: 
               - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}'
               - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}/*'
+
+  DataAthenaS3LocationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'bots-taijitu-${ENV}-${AWS::AccountId}-athena-table-data'
+      Tags:
+        - Key: "nike-tagguid"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, tagguid]
+        - Key: "nike-application"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, application]
+        - Key: "nike-department"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, department]
+        - Key: "nike-owner"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, owner]
+        - Key: "nike-distributionlist"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, distributionlist]
+        - Key: "nike-environment"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, environment]
 Outputs:
   DataS3LocationBucketArn:
     Value: !GetAtt DataS3LocationBucket.Arn
@@ -69,3 +86,6 @@ Outputs:
   DataS3LocationBucketName:
     Value: !Ref DataS3LocationBucket
     Description: "The name of the s3 bucket for storing processed data"
+  DataAthenaS3LocationBucketArn:
+    Value: !GetAtt DataAthenaS3LocationBucket.Arn
+    Description: "The ARN of the s3 bucket for storing athena table data"
