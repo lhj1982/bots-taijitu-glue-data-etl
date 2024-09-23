@@ -212,7 +212,7 @@ Resources:
           # "partition_filtering.enabled": "true"
           # "CrawlerSchemaDeserializerVersion": "1.0"
           # "compressionType": "gzip"
-          # "classification": "csv"
+          "classification": "csv"
           # "columnsOrdered": "true"
           # "areColumnsQuoted": "false"
           # "delimiter": ","

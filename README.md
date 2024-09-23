@@ -1,24 +1,39 @@
 # Introduction
 The project contains several glue etl job definitions that read data from different sources (kinesis, kafka, s3 etc) to save them in the centralized S3 bucket in data account.
 
-## Setup
+# General Overview
+* Get data from difference data sources (not necessarily in LITX aws account, actually, they should NOT in the target data lake account)
+* Support receiving data in different ways, such as Kinesis Data Stream, Kafka Data Stream, file delivery etc. Installation will be slightly different, more details followed
+* ETL job scripts are installed in source accounts, streaming data into S3 on target aws account
+* Respective glue crawler jobs will be defined per data source in data account S3 bucket location
+* Crawler is scheduled to run periodically to refresh data into respective athena tables
+* **Note** S3 bucket to save ETL results and athena tables are different, due to the fact the ETL might generate some metadata files which athena tables cannot recognize, we use a sync script from ETL bucket to athena table bucket, exclude those files.
+
+## Setup Kinesis Streaming ETL
 ### Prerequisites
-awscli, jupyter notebook, python3+, gimme-aws-cred, make cli
-### Steps
+* awscli, jupyter notebook, python3+, gimme-aws-cred, make cli
+* 2 AWS account, one contain source data and a kinesis data stream subscribe to it, the other is destination aws account where the ETL should save the data to
+
+### In source data account
 * run application_account_resource.yaml in source aws account
-* run data_account_resource.yaml in target data account
-* run data_s3_resource.yaml in target data account
 * make sure variables in Makefile is correct
 * Run the following command
 ```
 // generate aws token
-make generate-aws-credentials-test|prod
+make generate-aws-credentials env=test|prod
 // convert jupyter notebook to python script
 make convert-to-python
 // create new job
-make create-job-test|prod
+make create-job env=test|prod
 // update job
-make update-job-test|prod
+make update-job env=test|prod
+```
+### In target data account
+* run data_s3_resource.yaml in target data account
+* run data_account_glue_tables_resources.yaml in target data account
+* run the following sync script, it will sync all launch entries data from etl bucket to athena bucket.
+```
+make sync-athena-launch-entries-bucket env=test|prod
 ```
 
 ## Kinesis connection
