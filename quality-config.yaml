@@ -1,0 +1,3 @@
+qualityConfig:
+  application:
+    name: bots-taijitu-s3-data-sync
