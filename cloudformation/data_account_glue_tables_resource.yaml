@@ -14,10 +14,12 @@ Mappings:
   Accounts:
     "test": #cn test
       LAUNCHENTRIES3PATH: "s3://bots-taijitu-test-439314357471-athena-table-data/launch-entries/"
-      
+      TAIJITUATHENAS3BucketArn: "s3://bots-taijitu-test-439314357471-athena-table-data"
+      TAIJITURAWS3BucketArn: "s3://bots-taijitu-test-439314357471-athena-table-data"
     "prod": #cn prod
       LAUNCHENTRIES3PATH: "s3://bots-taijitu-prod-439413396736-athena-table-data/launch-entries/"
-      
+      TAIJITUATHENAS3BucketArn: "s3://bots-taijitu-prod-439413396736-athena-table-data"
+      TAIJITURAWS3BucketArn: "s3://bots-taijitu-prod-439413396736-athena-table-data"
   ResourceTagMap:
     NikeStandardTags:
       "application": "bots-taijitu-data-etl"
@@ -28,6 +30,57 @@ Mappings:
       "environment": "prod"
       "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
 Resources:
+  S3SyncEC2IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: bots-taijitu-s3-sync-ec2-instance-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEC2FullAccess"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/SecretsManagerReadWrite"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy"
+      Path: "/"
+  RolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: bots-taijiu-s3-sync-ec2-instance-policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement: # Example policy statement - Update as appropriate for _app_
+          - Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-athena-table-data"
+                - ENV: !Ref ENV
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-flatted-data"
+                - ENV: !Ref ENV
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-athena-table-data/*"
+                - ENV: !Ref ENV
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-flatted-data/*"
+                - ENV: !Ref ENV
+          - Effect: Allow
+            Action: logs:PutRetentionPolicy
+            Resource: "*"
+      Roles:
+        - !Ref S3SyncEC2IAMRole
+  S3SyncEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: bots-taijitu-s3-sync-ec2-instance-profile
+      Path: "/taijitu-s3-sync/"
+      Roles: 
+        - !Ref S3SyncEC2IAMRole
   TaijituGlueCrawlerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -262,6 +315,9 @@ Resources:
         "nike-environment": !Ref ENV
         "nike-tagguid": !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
 Outputs:
+  S3SyncEC2InstanceProfile:
+    Value: !Ref S3SyncEC2InstanceProfile
+    Description: "The instance profile for the ec2 instance that syncs data to s3"
   TaijituGlueCrawlerRoleArn:
     Value: !GetAtt TaijituGlueCrawlerRole.Arn
     Description: "The ARN of the Glue etl job IAM Role"

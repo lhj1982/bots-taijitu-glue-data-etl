@@ -123,7 +123,7 @@ def config = [
                                 associatePublicIp             : true,
                                 ebsOptimized                  : false,
                                 includeDefaultScheduledActions: false,
-                                iamInstanceProfile            : 'arn:aws-cn:iam::439314357471:instance-profile/antibots-backend/antiBots-portal-backend',
+                                iamInstanceProfile            : 'arn:aws-cn:iam::439314357471:instance-profile/taijitu-s3-sync/bots-taijitu-s3-sync-ec2-instance-profile',
                                 useDefaultTargetGroup         : true,
                                 userData: [
                                     OutputDir: "s3://bots-taijitu-test-439314357471-flatted-data/",
@@ -132,6 +132,45 @@ def config = [
                         ],
                         tags            : [
                                 'nike-environment': "test",
+                        ],
+                ],
+                "prodCN": [
+                        agentLabel      : 'ec2-ondemand-agent-cn',
+                        deployFlow      : [
+                                DEVELOPMENT: ["Deploy"],
+                                RELEASE         : ['Quality Gate', 'Deploy'],
+                        ],
+                        cloudEnvironment: "prod",
+                        deploy          : [
+                                // Account Information
+                                accountId                     : '439413396736', //Target AWS Account id
+                                region                        : 'cn-northwest-1',
+                                // Roles
+                                awsAssumeRole: 'NIKE.cicd.tool',// Role assumed by the BMX to do Cloudformation operations
+                                cfnPassRoleName: 'NIKE.cicd.deploy',// Roles assumed by the Cloudformation stack to manage application resources
+                                // Networking
+                                vpcId                         : 'vpc-01472d21bb792d03e',
+                                subnets                       : ['subnet-054062238d2327b0e', 'subnet-0b23b05edb4035d28', 'subnet-07b7c0ab40a91ae55'],
+                                securityGroups                : [
+                                                                  'sg-0127e3f882f1de27d'
+                                                                ],
+                                // instance settings
+                                desiredCapacity               : 1,
+                                maxSize                       : 1,
+                                minSize                       : 1,
+                                instanceType                  : 't3.micro',
+                                associatePublicIp             : true,
+                                ebsOptimized                  : false,
+                                includeDefaultScheduledActions: false,
+                                iamInstanceProfile            : 'arn:aws-cn:iam::439413396736:instance-profile/taijitu-s3-sync/bots-taijitu-s3-sync-ec2-instance-profile',
+                                useDefaultTargetGroup         : true,
+                                userData: [
+                                    OutputDir: "s3://bots-taijitu-prod-439413396736-flatted-data/",
+                                    AthenaTableDir: "s3://bots-taijitu-prod-439413396736-athena-table-data/"
+                                ],
+                        ],
+                        tags            : [
+                                'nike-environment': "prod",
                         ],
                 ],
         ],

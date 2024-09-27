@@ -1,12 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# test
+OutputDir="s3://bots-taijitu-test-439314357471-flatted-data"
+AthenaTableDir="s3://bots-taijitu-test-439314357471-athena-table-data"
 
-dt=$1
-if [ -z "$dt" ]; then
-    dt=`date '+%Y-%m-%d'`
-fi
-year=`date '+%Y'`
-month=`date '+%m'`
-day=`date '+%d'`
+# prod
+OutputDir="s3://bots-taijitu-prod-439413396736-flatted-data"
+AthenaTableDir="s3://bots-taijitu-prod-439413396736-athena-table-data"
+
+AWS_REGION=cn-northwest-1
 
 echo "Syncing Athena launch entries bucket..."
 aws s3 sync "${OutputDir}/launch-entries/" \
@@ -14,4 +15,4 @@ aws s3 sync "${OutputDir}/launch-entries/" \
     --exclude "*_spark_metadata/*" \
     --exclude "*_spark_metadata*" \
     --exclude "*year=__HIVE_DEFAULT_PARTITION__/*" \
-    --region cn-northwest-1
+    --region ${AWS_REGION}
