@@ -1,3 +1,11 @@
+########################################################################################
+# This script is used to sync the data from ETL raw bucket to Athena table bucket.
+# Using Jenkinsfile_S3Sync to deploy the ec2 to test|prod environment.
+# Copy this script to /usr/local/taijitu/s3_sync.sh
+# Add the following crontab using crontab -e
+# 0 */1 * * * bash /usr/local/taijitu/s3_sync.sh
+########################################################################################
+
 #!/bin/bash
 # test
 OutputDir="s3://bots-taijitu-test-439314357471-flatted-data"
