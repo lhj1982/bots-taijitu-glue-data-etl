@@ -15,8 +15,8 @@ def config = [
         usePraDispatch       : false,
         buildFlow            : [
                 PULL_REQUEST    : ['Build'],
-                RELEASE         : ['Build', 'Compile'],
-                DEVELOPMENT     : ['Build', 'Compile', 'AMI', 'Smart Share']
+                DEVELOPMENT     : ['Build', 'Compile', 'Quality Gate', 'AMI', 'Smart Share'],
+                RELEASE         : ['Build', 'Compile', 'Smart Share']
         ],
         branchMatcher        : [
                 RELEASE         : ['main'],
@@ -81,17 +81,16 @@ def config = [
                 amiSelection     : ['osversion': '', 'quarter': '3.0', 'weeksback': ''],
             ]
         ],
-        // share                : [
-        //         sourceAccountId: '020484671131',
-        //         accounts       : [
-        //                 '439314357471': [ 'cn-northwest-1'],  // LITX test china
-        //                 '439413396736': [ 'cn-northwest-1'],  // LITX prod china
-        //         ],
-        // ],
+        share                : [
+                sourceAccountId: '020484671131',
+                accounts       : [
+                        '439314357471': [ 'cn-northwest-1'],  // LITX test china
+                        '439413396736': [ 'cn-northwest-1'],  // LITX prod china
+                ],
+        ],
         application          : [
                 name      : appName,
                 group     : teamName,
-                teamPrefix: "acid",
                 version   : version,
         ],
         deploymentEnvironment: [
@@ -99,7 +98,7 @@ def config = [
                         agentLabel      : 'ec2-ondemand-agent-cn',
                         deployFlow      : [
                                 DEVELOPMENT: ["Deploy"],
-                                RELEASE         : ['Quality Gate', 'Deploy'],
+                                RELEASE         : ['Deploy'],
                         ],
                         cloudEnvironment: "test",
                         deploy          : [
@@ -138,7 +137,7 @@ def config = [
                         agentLabel      : 'ec2-ondemand-agent-cn',
                         deployFlow      : [
                                 DEVELOPMENT: ["Deploy"],
-                                RELEASE         : ['Quality Gate', 'Deploy'],
+                                RELEASE         : ['Deploy'],
                         ],
                         cloudEnvironment: "prod",
                         deploy          : [
