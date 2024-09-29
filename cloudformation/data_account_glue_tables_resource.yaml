@@ -179,21 +179,21 @@ Resources:
               Type: string
             - Name: status
               Type: string
+            - Name: upmid
+              Type: string
+            - Name: ttl
+              Type: string
             - Name: tracecontext
               Type: string
             - Name: trueclientip
               Type: string
-            - Name: ttl
-              Type: string
-            - Name: upmid
-              Type: string
             - Name: useragent
               Type: string
-            - Name: validationsummary_result
+            - Name: usertype
               Type: string
             - Name: waitingreason
               Type: string
-            - Name: usertype
+            - Name: validationsummary_result
               Type: string
             - Name: shipping_recipient_firstname
               Type: string

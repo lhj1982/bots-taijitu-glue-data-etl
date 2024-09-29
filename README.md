@@ -32,9 +32,16 @@ make update-job env=test|prod
 * run data_s3_resource.yaml in target data account
 * run data_account_glue_tables_resources.yaml in target data account
 * run the following sync script, it will sync all launch entries data from etl bucket to athena bucket.
-```
-make sync-athena-launch-entries-bucket env=test|prod
-```
+There are 2 alternatives to sync buckets
+  - Running local
+  ```
+  make sync-athena-launch-entries-bucket env=test|prod
+  ```
+  - Running as crontab
+    * Make sure an EC2 is deployed to LITX account, using Jenkinsfile_S3Sync
+    * Update variable in the **s3_sync.sh** script to match the environment
+    * Add crontab job according to the description in script
+
 
 ## Kinesis connection
 Deploy glue etl job in the same account as kds is located
