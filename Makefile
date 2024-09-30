@@ -72,7 +72,7 @@ create-job: .FORCE
 		--glue-version 4.0 \
 		--number-of-workers 2 \
 		--worker-type G.1X \
-		--default-arguments '{"--enable-glue-datacatalog" : "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}' \
+		--default-arguments '{"--enable-glue-datacatalog" : "true", "--enable-metrics": "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}' \
 		--region ${AWS_Regions}
 
 update-job: .FORCE
@@ -84,5 +84,5 @@ update-job: .FORCE
 	aws glue update-job --job-name ${JOB_NAME} --profile ${AWS_PROFILE} \
 		--job-update '{"Role": "'${JOB_ROLE}'", \
 		"Command" : {"Name" :  "gluestreaming", "ScriptLocation" : "${ScriptDir}kinesis_handler.py", "PythonVersion": "3"}, \
-		"DefaultArguments": {"--enable-glue-datacatalog" : "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}, \
+		"DefaultArguments": {"--enable-glue-datacatalog" : "true", "--enable-metrics": "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}, \
 		"GlueVersion": "4.0", "WorkerType": "G.1X", "NumberOfWorkers": 2}' --region ${AWS_Regions}
