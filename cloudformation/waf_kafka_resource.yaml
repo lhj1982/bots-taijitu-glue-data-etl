@@ -5,17 +5,41 @@ Metadata:
   Stackname: 'bots-taijitu-waf-kafka-job-resource'
 
 Parameters:
-  Env:
+  ENV:
     Type: String
     Default: "test"
     AllowedValues:
       - "test"
       - "prod"
     Description: "The environment to deploy the stack to"
-  ScriptS3Path:
+  SCRIPT_PATH:
     Type: String
     Default: ""
-    Description: "the S3 location of script"
+    Description: "glue job script path in s3"
+  KAFKA_BOOTSTRAP_SERVERS:
+    Type: String
+    Default: ""
+    Description: "kafka config - bootstrap.servers"
+  KAFKA_SASL_JAAS_CONFIG:
+    Type: String
+    Default: ""
+    Description: "kafka config - sasl.jaas.config"
+  KAFKA_SSL_TRUSTSTORE_LOCATION:
+    Type: String
+    Default: ""
+    Description: "kafka config - ssl.truststore.location"
+  KAFKA_SSL_TRUSTSTORE_PASSWORD:
+    Type: String
+    Default: ""
+    Description: "kafka config - ssl.truststore.password"
+  DATA_LOCATION:
+    Type: String
+    Default: ""
+    Description: "output location"
+  CHECKPOINT_LOCATION:
+    Type: String
+    Default: ""
+    Description: "check location of glue job"
 Mappings:
   ResourceTagMap:
     NikeStandardTags:
@@ -24,11 +48,7 @@ Mappings:
       "domain": "DTC - CiC Bots"
       "owner": "frank.zhao@nike.com"
       "distributionlist": "Lst-gc-cdn-antibots.admin@nike.com"
-      "environment": "prod"
       "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
-    ExtraFiles:
-      "test" : "s3://bot-taijitu-etl-script-test/etl-waf-kafka/mix.4096.client.truststore.jks"
-      "prod" : "s3://bot-taijitu-etl-script-prod/etl-waf-kafka/mix.4096.client.truststore.jks"
 
 Resources:
   WafKafkaJob:
@@ -36,19 +56,25 @@ Resources:
     Properties:
       Name: bots-taijitu-waf-kafka-job
       Tags:
-        nike-tagguid: !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
         nike-application: !FindInMap [ ResourceTagMap, NikeStandardTags, application ]
         nike-department: !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
+        nike-domain: !FindInMap [ ResourceTagMap, NikeStandardTags, domain ]
         nike-owner: !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
         nike-distributionlist: !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
-        nike-environment: !Ref Env
+        nike-environment: !Ref ENV
+        nike-tagguid: !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
       Role: bots-taijitu-glue-runtime-service-role
       Command:
         Name: gluestreaming
-        ScriptLocation: !Ref ScriptS3Path
+        ScriptLocation: !Ref SCRIPT_PATH
         PythonVersion: '3'
       DefaultArguments:
-        "--extra-files": !FindInMap [ ResourceTagMap, ExtraFiles, !Ref Env ]
+        --extra-files: !Ref KAFKA_SSL_TRUSTSTORE_LOCATION
+        --KAFKA_BOOTSTRAP_SERVERS: !Ref KAFKA_BOOTSTRAP_SERVERS
+        --KAFKA_SASL_JAAS_CONFIG : !Ref KAFKA_SASL_JAAS_CONFIG
+        --KAFKA_SSL_TRUSTSTORE_PASSWORD : !Ref KAFKA_SSL_TRUSTSTORE_PASSWORD
+        --DATA_LOCATION: !Ref DATA_LOCATION
+        --CHECKPOINT_LOCATION: !Ref CHECKPOINT_LOCATION
       GlueVersion: '4.0'
       WorkerType: G.025X
       NumberOfWorkers: 2
