@@ -32,13 +32,13 @@ job.init("waf_entry", args)
 # DATA_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/dataDir'
 # CHECKPOINT_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/checkPointDir'
 
-KAFKA_BOOTSTRAP_SERVERS = 'alikafka-post-cn-9t93w71ti003-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-3.alikafka.aliyuncs.com:9093'
-KAFKA_SASL_JAAS_CONFIG = 'org.apache.kafka.common.security.plain.PlainLoginModule required username="test1234" password="Test1234";'
-KAFKA_SSL_TRUSTSTORE_LOCATION = '/tmp/mix.4096.client.truststore.jks'
-KAFKA_SSL_TRUSTSTORE_PASSWORD = 'KafkaOnsClient'
-KAFKA_SUBSCRIBE = 'test'
-DATA_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/dataDir'
-CHECKPOINT_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/checkPointDir'
+KAFKA_BOOTSTRAP_SERVERS = args['KAFKA_BOOTSTRAP_SERVERS']
+KAFKA_SASL_JAAS_CONFIG = args['KAFKA_SASL_JAAS_CONFIG']
+KAFKA_SSL_TRUSTSTORE_LOCATION = args['KAFKA_SSL_TRUSTSTORE_LOCATION']
+KAFKA_SSL_TRUSTSTORE_PASSWORD = args['KAFKA_SSL_TRUSTSTORE_PASSWORD']
+KAFKA_SUBSCRIBE = args['KAFKA_SUBSCRIBE']
+DATA_LOCATION = args['DATA_LOCATION']
+CHECKPOINT_LOCATION = args['CHECKPOINT_LOCATION']
 
 kafka_params = {
     "kafka.bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,

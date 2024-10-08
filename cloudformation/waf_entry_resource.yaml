@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  cloudformation for bots-taijitu-waf-kafka-job
+  cloudformation for bots-taijitu-waf-entry-job
 Metadata:
-  Stackname: 'bots-taijitu-waf-kafka-job-resource'
+  Stackname: 'bots-taijitu-waf-entry-job-resource'
 
 Parameters:
   ENV:
@@ -54,7 +54,7 @@ Resources:
   WafKafkaJob:
     Type: AWS::Glue::Job
     Properties:
-      Name: bots-taijitu-waf-kafka-job
+      Name: bots-taijitu-waf-entry-job
       Tags:
         nike-application: !FindInMap [ ResourceTagMap, NikeStandardTags, application ]
         nike-department: !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
@@ -63,7 +63,7 @@ Resources:
         nike-distributionlist: !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
         nike-environment: !Ref ENV
         nike-tagguid: !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
-      Role: bots-taijitu-glue-runtime-service-role
+      Role: bots-taijitu-glue-crawler-role
       Command:
         Name: gluestreaming
         ScriptLocation: !Ref SCRIPT_PATH
