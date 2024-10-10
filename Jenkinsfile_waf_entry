@@ -44,8 +44,8 @@ def config = [
                 ],
                 jksUpload : [
                     bucket          : 'bot-taijitu-etl-script-test',
-                    target          : 'etl-waf/entry/mix.4096.client.truststore.jks',
-                    source          : './etl-waf/entry/mix.4096.client.truststore.jks'
+                    target          : 'etl-waf/entry/test.kafka.truststore.jks',
+                    source          : './etl-waf/entry/test.kafka.truststore.jks'
                 ]
             ],
             lambda: [
@@ -57,11 +57,11 @@ def config = [
                 parameters      : [
                     Env         : 'test',
                     ScriptPath : 's3://bot-taijitu-etl-script-test/etl-waf/entry/waf_entry.py',
-                    KafkaBootstrapServers : 'alikafka-post-cn-9t93w71ti003-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-3.alikafka.aliyuncs.com:9093',
-                    KafkaUserName : 'test1234',
-                    KafkaPassword : 'Test1234',
-                    KafkaSslTruststoreS3Location : 's3://bot-taijitu-etl-script-test/etl-waf/entry/mix.4096.client.truststore.jks',
-                    KafkaSslTruststoreLocalLocation : '/tmp/mix.4096.client.truststore.jks',
+                    KafkaBootstrapServers : 'alikafka-post-cn-li93yay7t001-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-3.alikafka.aliyuncs.com:9093',
+                    KafkaUserName : 'aliWafToTaijitu',
+                    KafkaPassword : 'aliWafToTaijitu123',
+                    KafkaSslTruststoreS3Location : 's3://bot-taijitu-etl-script-test/etl-waf/entry/test.kafka.truststore.jks',
+                    KafkaSslTruststoreLocalLocation : '/tmp/test.kafka.truststore.jks',
                     KafkaSslTruststorePassword : 'KafkaOnsClient',
                     KafkaSubscribe: 'test',
                     DataLocation : 's3://bots-taijitu-test-439314357471-flatted-data/waf-entry/data',

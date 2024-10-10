@@ -24,3 +24,11 @@ aws s3 sync "${OutputDir}/launch-entries/" \
     --exclude "*_spark_metadata*" \
     --exclude "*year=__HIVE_DEFAULT_PARTITION__/*" \
     --region ${AWS_REGION}
+
+echo "Syncing Athena waf entry bucket..."
+aws s3 sync "${OutputDir}/waf-entry/data/" \
+    "${AthenaTableDir}/waf-entry/data/" \
+    --exclude "*_spark_metadata/*" \
+    --exclude "*_spark_metadata*" \
+    --exclude "*year=__HIVE_DEFAULT_PARTITION__/*" \
+    --region ${AWS_REGION}

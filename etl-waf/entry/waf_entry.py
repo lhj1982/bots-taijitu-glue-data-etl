@@ -26,13 +26,6 @@ job = Job(glueContext)
 job.init("waf_entry", args)
 
 
-# KAFKA_BOOTSTRAP_SERVERS = 'alikafka-post-cn-9t93w71ti003-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-3.alikafka.aliyuncs.com:9093'
-# KAFKA_SASL_JAAS_CONFIG = 'org.apache.kafka.common.security.plain.PlainLoginModule required username="test1234" password="Test1234";'
-# KAFKA_SSL_TRUSTSTORE_LOCATION = '/tmp/mix.4096.client.truststore.jks'
-# KAFKA_SSL_TRUSTSTORE_PASSWORD = 'KafkaOnsClient'
-# KAFKA_SUBSCRIBE = 'test'
-# DATA_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/dataDir'
-# CHECKPOINT_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/checkPointDir'
 KAFKA_USERNAME = args['KAFKA_USERNAME']
 KAFKA_PASSWORD = args['KAFKA_PASSWORD']
 
@@ -57,45 +50,19 @@ kafka_params = {
 }
 
 schema = StructType([
-    StructField("real_client_ip", StringType(), True),
-    StructField("user_id", StringType(), True),
-    StructField("status", StringType(), True),
-    StructField("response_set_cookie", StringType(), True),
-    StructField("bypass_matched_ids", StringType(), True),
-    StructField("matched_host", StringType(), True),
-    StructField("request_traceid", StringType(), True),
-    StructField("http_user_agent", StringType(), True),
-    StructField("request_length", StringType(), True),
-    StructField("wxbb_info_tbl", StringType(), True),
-    StructField("upstream_addr", StringType(), True),
-    StructField("upstream_response_time", StringType(), True),
-    StructField("http_x_forwarded_for", StringType(), True),
-    StructField("region", StringType(), True),
-    StructField("request_time_msec", StringType(), True),
-    StructField("body_bytes_sent", StringType(), True),
-    StructField("wxbb_invalid_wua", StringType(), True),
-    StructField("remote_addr", StringType(), True),
-    StructField("https", StringType(), True),
-    StructField("request_traceid_origin", StringType(), True),
-    StructField("request_body", StringType(), True),
-    StructField("request_method", StringType(), True),
-    StructField("http_referer", StringType(), True),
-    StructField("server_port", StringType(), True),
-    StructField("server_protocol", StringType(), True),
-    StructField("upstream_status", StringType(), True),
-    StructField("querystring", StringType(), True),
-    StructField("http_cookie", StringType(), True),
-    StructField("ssl_protocol", StringType(), True),
     StructField("host", StringType(), True),
+    StructField("http_user_agent", StringType(), True),
+    StructField("https", StringType(), True),
+    StructField("http_cookie", StringType(), True),
+    StructField("real_client_ip", StringType(), True),
+    StructField("status", StringType(), True),
+    StructField("request_method", StringType(), True),
+    StructField("request_body", StringType(), True),
     StructField("request_path", StringType(), True),
-    StructField("ssl_cipher", StringType(), True),
-    StructField("remote_port", StringType(), True),
-    StructField("content_type", StringType(), True),
+    StructField("request_traceid", StringType(), True),
     StructField("time", StringType(), True),
-    StructField("__pack_meta__", StringType(), True),
-    StructField("__topic__", StringType(), True),
-    StructField("__source__", StringType(), True),
-    StructField("__time__", StringType(), True)
+    StructField("user_id", StringType(), True),
+    StructField("wxbb_info_tbl", StringType(), True),
 ])
 
 df = spark.readStream.format("kafka") \
@@ -106,59 +73,106 @@ df = spark.readStream.format("kafka") \
     .select("data.*")
 
 request_body_schema = StructType([
+    StructField("launchId", StringType(), nullable=True),
+    StructField("skuId", StringType(), nullable=True),
     StructField("locale", StringType(), nullable=True),
-    StructField("totals", StructType([
-        StructField("fulfillment", StructType([
-            StructField("details", StructType([
-                StructField("price", DoubleType(), nullable=True),
-                StructField("discount", DoubleType(), nullable=True)
-            ]), nullable=True),
-            StructField("total", DoubleType(), nullable=True)
-        ]), nullable=True),
-        StructField("items", StructType([
-            StructField("details", StructType([
-                StructField("price", DoubleType(), nullable=True),
-                StructField("discount", DoubleType(), nullable=True)
-            ]), nullable=True),
-            StructField("total", DoubleType(), nullable=True)
-        ]), nullable=True),
-        StructField("taxes", StructType([
-            StructField("details", StructType([
-                StructField("items", StructType([
-                    StructField("type", StringType(), nullable=True)
-                ]), nullable=True)
-            ]), nullable=True)
-        ]), nullable=True)
-    ]), nullable=True),
-    StructField("checkoutId", StringType(), nullable=True),
     StructField("shipping", StructType([
-        StructField("address", StructType([
-            StructField("county", StringType(), nullable=True),
-            StructField("state", StringType(), nullable=True),
-            StructField("address1", StringType(), nullable=True),
-            StructField("city", StringType(), nullable=True),
-            StructField("country", StringType(), nullable=True)
-        ]), nullable=True),
         StructField("recipient", StructType([
             StructField("firstName", StringType(), nullable=True),
-            StructField("email", StringType(), nullable=True),
+            StructField("altFirstName", StringType(), nullable=True),
             StructField("lastName", StringType(), nullable=True),
-            StructField("phoneNumber", StringType(), nullable=True)
+            StructField("altLastName", StringType(), nullable=True),
+            StructField("middleName", StringType(), nullable=True),
+            StructField("phoneNumber", StringType(), nullable=True),
+            StructField("email", StringType(), nullable=True)
+        ]), nullable=True),
+        StructField("address", StructType([
+            StructField("address1", StringType(), nullable=True),
+            StructField("address2", StringType(), nullable=True),
+            StructField("address3", StringType(), nullable=True),
+            StructField("city", StringType(), nullable=True),
+            StructField("state", StringType(), nullable=True),
+            StructField("postalCode", StringType(), nullable=True),
+            StructField("country", StringType(), nullable=True),
+            StructField("county", StringType(), nullable=True)
         ]), nullable=True),
         StructField("getBy", StructType([
+            StructField("minDate", StructType([
+                StructField("dateTime", StringType(), nullable=True),
+                StructField("timezone", StringType(), nullable=True),
+                StructField("precision", StringType(), nullable=True)
+            ]), nullable=True),
             StructField("maxDate", StructType([
                 StructField("dateTime", StringType(), nullable=True),
                 StructField("timezone", StringType(), nullable=True),
                 StructField("precision", StringType(), nullable=True)
             ]), nullable=True)
+        ]), nullable=True),
+        StructField("fulfillmentAnnotation", StringType(), nullable=True)
+    ]), nullable=True),
+    StructField("totals", StructType([
+        StructField("items", StructType([
+            StructField("total", DoubleType(), nullable=True),
+            StructField("details", StructType([
+                StructField("price", DoubleType(), nullable=True),
+                StructField("discount", DoubleType(), nullable=True)
+            ]), nullable=True)
+        ]), nullable=True),
+        StructField("valueAddedServices", StructType([
+            StructField("total", DoubleType(), nullable=True),
+            StructField("details", StructType([
+                StructField("price", DoubleType(), nullable=True),
+                StructField("discount", DoubleType(), nullable=True)
+            ]), nullable=True)
+        ]), nullable=True),
+        StructField("taxes", StructType([
+            StructField("total", DoubleType(), nullable=True),
+            StructField("details", StructType([
+                StructField("items", StructType([
+                    StructField("tax", DoubleType(), nullable=True),
+                    StructField("type", StringType(), nullable=True)
+                ]), nullable=True),
+                StructField("shipping", StructType([
+                    StructField("tax", DoubleType(), nullable=True),
+                    StructField("type", StringType(), nullable=True)
+                ]), nullable=True),
+                StructField("valueAddedServices", StructType([
+                    StructField("tax", DoubleType(), nullable=True),
+                    StructField("type", StringType(), nullable=True)
+                ]), nullable=True),
+            ]), nullable=True),
+        ]), nullable=True),
+        StructField("fulfillment", StructType([
+            StructField("total", DoubleType(), nullable=True),
+            StructField("details", StructType([
+                StructField("price", DoubleType(), nullable=True),
+                StructField("discount", DoubleType(), nullable=True)
+            ]), nullable=True)
         ]), nullable=True)
     ]), nullable=True),
+    StructField("currency", StringType(), nullable=True),
     StructField("paymentToken", StringType(), nullable=True),
     StructField("channel", StringType(), nullable=True),
+    StructField("checkoutId", StringType(), nullable=True),
+    StructField("deviceId", StringType(), nullable=True),
+    StructField("previousEntryId", StringType(), nullable=True),
+    StructField("offerId", StringType(), nullable=True),
     StructField("postpayLink", StringType(), nullable=True),
-    StructField("skuId", StringType(), nullable=True),
-    StructField("currency", StringType(), nullable=True),
-    StructField("launchId", StringType(), nullable=True)
+    StructField("invoiceInfo", ArrayType(StructType([
+                        StructField("type", StringType(), nullable=True),
+                        StructField("detail", StringType(), nullable=True),
+                        StructField("taxId", StringType(), nullable=True)
+                    ])), nullable=True),
+    StructField("storeId", StringType(), nullable=True),
+    StructField("retailPickupId", StringType(), nullable=True),
+    StructField("geolocation", StructType([
+        StructField("latitude", DoubleType(), nullable=True),
+        StructField("longitude", DoubleType(), nullable=True)
+    ]), nullable=True),
+    StructField("retailPickupPerson", StructType([
+        StructField("givenName", StringType(), nullable=True),
+        StructField("familyName", StringType(), nullable=True)
+    ]), nullable=True)
 ])
 
 request_body_df = df.withColumn('requestBody', from_json(col('request_body'), request_body_schema)) \
