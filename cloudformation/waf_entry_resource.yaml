@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  cloudformation for bots-taijitu-waf-entry-job
+Metadata:
+  Stackname: 'bots-taijitu-waf-entry-job-resource'
+
+Parameters:
+  Env:
+    Type: String
+    Default: "test"
+    AllowedValues:
+      - "test"
+      - "prod"
+    Description: "The environment to deploy the stack to"
+  ScriptPath:
+    Type: String
+    Default: ""
+    Description: "glue job script path in s3"
+  KafkaBootstrapServers:
+    Type: String
+    Default: ""
+    Description: "kafka config - bootstrap.servers"
+  KafkaUserName:
+    Type: String
+    Default: ""
+    Description: "kafka config - username"
+  KafkaPassword:
+    Type: String
+    Default: ""
+    Description: "kafka config - password"
+  KafkaSslTruststoreLocalLocation:
+    Type: String
+    Default: ""
+    Description: "kafka config - ssl.truststore.location"
+  KafkaSslTruststoreS3Location:
+    Type: String
+    Default: ""
+    Description: "truststore file in S3"
+  KafkaSslTruststorePassword:
+    Type: String
+    Default: ""
+    Description: "kafka config - ssl.truststore.password"
+  KafkaSubscribe:
+    Type: String
+    Default: ""
+    Description: "kafka config - subscribe, group id"
+  DataLocation:
+    Type: String
+    Default: ""
+    Description: "output location"
+  CheckPointLocation:
+    Type: String
+    Default: ""
+    Description: "check location of glue job"
+Mappings:
+  ResourceTagMap:
+    NikeStandardTags:
+      "application": "bots-taijitu-data-etl"
+      "department": "Web Eng - nike.com Cloud Capability"
+      "domain": "DTC - CiC Bots"
+      "owner": "frank.zhao@nike.com"
+      "distributionlist": "Lst-gc-cdn-antibots.admin@nike.com"
+      "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
+
+Resources:
+  WafEntryJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: bots-taijitu-waf-entry-job
+      Tags:
+        nike-application: !FindInMap [ ResourceTagMap, NikeStandardTags, application ]
+        nike-department: !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
+        nike-domain: !FindInMap [ ResourceTagMap, NikeStandardTags, domain ]
+        nike-owner: !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
+        nike-distributionlist: !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
+        nike-environment: !Ref Env
+        nike-tagguid: !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
+      Role: bots-taijitu-glue-crawler-role
+      Command:
+        Name: gluestreaming
+        ScriptLocation: !Ref ScriptPath
+        PythonVersion: '3'
+      DefaultArguments:
+        --extra-files: !Ref KafkaSslTruststoreS3Location
+        --KAFKA_BOOTSTRAP_SERVERS: !Ref KafkaBootstrapServers
+        --KAFKA_USERNAME : !Ref KafkaUserName
+        --KAFKA_PASSWORD : !Ref KafkaPassword
+        --KAFKA_SSL_TRUSTSTORE_PASSWORD : !Ref KafkaSslTruststorePassword
+        --KAFKA_SSL_TRUSTSTORE_LOCATION : !Ref KafkaSslTruststoreLocalLocation
+        --DATA_LOCATION: !Ref DataLocation
+        --CHECKPOINT_LOCATION: !Ref CheckPointLocation
+        --KAFKA_SUBSCRIBE : !Ref KafkaSubscribe
+      GlueVersion: '4.0'
+      WorkerType: G.025X
+      NumberOfWorkers: 2

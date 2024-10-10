@@ -1,0 +1,88 @@
+#!groovy
+@Library('cicd-pipeline') _
+
+def config = [
+    usePraDispatch: false,
+    buildFlow: [
+        DEPLOY_TEST: ['Build'],
+        DEPLOY_PROD: ['Build'],
+    ],
+    branchMatcher: [
+        DEPLOY_TEST: ['main']
+    ],
+    qma : [configFile: 'quality-config.yaml'],
+    deploymentEnvironment:  [
+        'test': [
+            agentLabel      : 'china',
+            deployFlow: [
+                DEPLOY_TEST: ['S3Upload', 'Deploy'],
+            ],
+            cloudEnvironment: 'test',
+            tags: [
+                'Name': 'bots-taijitu-glue-waf-entry',
+                'costcenter': '161961',
+                'classification': 'sliver',
+                'email': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'owner': 'gc-cdn-antibots',
+                'nike-department': 'platform engineering - gc launch',
+                'nike-domain': 'gc-cdn-antibots',
+                'nike-application': 'bots-taijitu-glue-waf-entry',
+                'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'nike-owner': 'frank.zhao@nike.com',
+                'nike-environment': 'test',
+            ],
+            aws: [
+                accountId: '439314357471',
+                awsRole: 'NIKE.cicd.tool',
+                region: 'cn-northwest-1',
+            ],
+            s3: [
+                scriptUpload : [
+                    bucket          : 'bot-taijitu-etl-script-test',
+                    target          : 'etl-waf/entry/waf_entry.py',
+                    source          : './etl-waf/entry/waf_entry.py'
+                ],
+                jksUpload : [
+                    bucket          : 'bot-taijitu-etl-script-test',
+                    target          : 'etl-waf/entry/mix.4096.client.truststore.jks',
+                    source          : './etl-waf/entry/mix.4096.client.truststore.jks'
+                ]
+            ],
+            lambda: [
+                stackname       : 'bots-taijitu-waf-entry-job-resource',
+                templateFile    : 'cloudformation/waf_entry_resource.yaml',
+                s3Bucket        : 'bot-taijitu-etl-script-test',
+                s3Prefix        : 'etl-waf/entry/',
+                cfAssumeRole    : 'arn:aws-cn:iam::439314357471:role/NIKE.cicd.deploy',
+                parameters      : [
+                    Env         : 'test',
+                    ScriptPath : 's3://bot-taijitu-etl-script-test/etl-waf/entry/waf_entry.py',
+                    KafkaBootstrapServers : 'alikafka-post-cn-9t93w71ti003-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-9t93w71ti003-3.alikafka.aliyuncs.com:9093',
+                    KafkaUserName : 'test1234',
+                    KafkaPassword : 'Test1234',
+                    KafkaSslTruststoreS3Location : 's3://bot-taijitu-etl-script-test/etl-waf/entry/mix.4096.client.truststore.jks',
+                    KafkaSslTruststoreLocalLocation : '/tmp/mix.4096.client.truststore.jks',
+                    KafkaSslTruststorePassword : 'KafkaOnsClient',
+                    KafkaSubscribe: 'test',
+                    DataLocation : 's3://bots-taijitu-test-439314357471-flatted-data/waf-entry/data',
+                    CheckPointLocation : 's3://bots-taijitu-test-439314357471-flatted-data/waf-entry/checkpoint'
+                ],
+            ],
+            tags: [
+                'nike-environment': 'test',
+                'costcenter': '161961',
+                'classification': 'sliver',
+                'email': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'owner': 'gc-cdn-antibots',
+                'nike-department': 'platform engineering - gc launch',
+                'nike-domain': 'gc-cdn-antibots',
+                'nike-application': 'bots-taijitu-glue-waf-entry',
+                'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'nike-owner': 'frank.zhao@nike.com',
+                'nike-environment': 'test',
+            ],
+        ]
+    ]
+]
+
+lambdaSamDeployPipeline(config)
