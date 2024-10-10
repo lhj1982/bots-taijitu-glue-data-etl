@@ -5,38 +5,50 @@ Metadata:
   Stackname: 'bots-taijitu-waf-entry-job-resource'
 
 Parameters:
-  ENV:
+  Env:
     Type: String
     Default: "test"
     AllowedValues:
       - "test"
       - "prod"
     Description: "The environment to deploy the stack to"
-  SCRIPT_PATH:
+  ScriptPath:
     Type: String
     Default: ""
     Description: "glue job script path in s3"
-  KAFKA_BOOTSTRAP_SERVERS:
+  KafkaBootstrapServers:
     Type: String
     Default: ""
     Description: "kafka config - bootstrap.servers"
-  KAFKA_SASL_JAAS_CONFIG:
+  KafkaUserName:
     Type: String
     Default: ""
-    Description: "kafka config - sasl.jaas.config"
-  KAFKA_SSL_TRUSTSTORE_LOCATION:
+    Description: "kafka config - username"
+  KafkaPassword:
+    Type: String
+    Default: ""
+    Description: "kafka config - password"
+  KafkaSslTruststoreLocalLocation:
     Type: String
     Default: ""
     Description: "kafka config - ssl.truststore.location"
-  KAFKA_SSL_TRUSTSTORE_PASSWORD:
+  KafkaSslTruststoreS3Location:
+    Type: String
+    Default: ""
+    Description: "truststore file in S3"
+  KafkaSslTruststorePassword:
     Type: String
     Default: ""
     Description: "kafka config - ssl.truststore.password"
-  DATA_LOCATION:
+  KafkaSubscribe:
+    Type: String
+    Default: ""
+    Description: "kafka config - subscribe, group id"
+  DataLocation:
     Type: String
     Default: ""
     Description: "output location"
-  CHECKPOINT_LOCATION:
+  CheckPointLocation:
     Type: String
     Default: ""
     Description: "check location of glue job"
@@ -51,7 +63,7 @@ Mappings:
       "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
 
 Resources:
-  WafKafkaJob:
+  WafEntryJob:
     Type: AWS::Glue::Job
     Properties:
       Name: bots-taijitu-waf-entry-job
@@ -61,20 +73,23 @@ Resources:
         nike-domain: !FindInMap [ ResourceTagMap, NikeStandardTags, domain ]
         nike-owner: !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
         nike-distributionlist: !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
-        nike-environment: !Ref ENV
+        nike-environment: !Ref Env
         nike-tagguid: !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
       Role: bots-taijitu-glue-crawler-role
       Command:
         Name: gluestreaming
-        ScriptLocation: !Ref SCRIPT_PATH
+        ScriptLocation: !Ref ScriptPath
         PythonVersion: '3'
       DefaultArguments:
-        --extra-files: !Ref KAFKA_SSL_TRUSTSTORE_LOCATION
-        --KAFKA_BOOTSTRAP_SERVERS: !Ref KAFKA_BOOTSTRAP_SERVERS
-        --KAFKA_SASL_JAAS_CONFIG : !Ref KAFKA_SASL_JAAS_CONFIG
-        --KAFKA_SSL_TRUSTSTORE_PASSWORD : !Ref KAFKA_SSL_TRUSTSTORE_PASSWORD
-        --DATA_LOCATION: !Ref DATA_LOCATION
-        --CHECKPOINT_LOCATION: !Ref CHECKPOINT_LOCATION
+        --extra-files: !Ref KafkaSslTruststoreS3Location
+        --KAFKA_BOOTSTRAP_SERVERS: !Ref KafkaBootstrapServers
+        --KAFKA_USERNAME : !Ref KafkaUserName
+        --KAFKA_PASSWORD : !Ref KafkaPassword
+        --KAFKA_SSL_TRUSTSTORE_PASSWORD : !Ref KafkaSslTruststorePassword
+        --KAFKA_SSL_TRUSTSTORE_LOCATION : !Ref KafkaSslTruststoreLocalLocation
+        --DATA_LOCATION: !Ref DataLocation
+        --CHECKPOINT_LOCATION: !Ref CheckPointLocation
+        --KAFKA_SUBSCRIBE : !Ref KafkaSubscribe
       GlueVersion: '4.0'
       WorkerType: G.025X
       NumberOfWorkers: 2

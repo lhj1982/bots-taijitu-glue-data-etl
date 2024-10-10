@@ -9,9 +9,11 @@ from pyspark.sql.types import StringType, StructType, StructField, ArrayType, Do
 
 
 args = getResolvedOptions(sys.argv, ["KAFKA_BOOTSTRAP_SERVERS",
-                                     "KAFKA_SASL_JAAS_CONFIG",
+                                     "KAFKA_USERNAME",
+                                     "KAFKA_PASSWORD",
                                      "KAFKA_SSL_TRUSTSTORE_LOCATION",
                                      "KAFKA_SSL_TRUSTSTORE_PASSWORD",
+                                     "KAFKA_SUBSCRIBE",
                                      "DATA_LOCATION",
                                      "CHECKPOINT_LOCATION"])
 print(args)
@@ -31,9 +33,11 @@ job.init("waf_entry", args)
 # KAFKA_SUBSCRIBE = 'test'
 # DATA_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/dataDir'
 # CHECKPOINT_LOCATION = 's3://nike-commerce-test-app-internal/testKafka/checkPointDir'
+KAFKA_USERNAME = args['KAFKA_USERNAME']
+KAFKA_PASSWORD = args['KAFKA_PASSWORD']
 
 KAFKA_BOOTSTRAP_SERVERS = args['KAFKA_BOOTSTRAP_SERVERS']
-KAFKA_SASL_JAAS_CONFIG = args['KAFKA_SASL_JAAS_CONFIG']
+KAFKA_SASL_JAAS_CONFIG = f'org.apache.kafka.common.security.plain.PlainLoginModule required username="{KAFKA_USERNAME}" password="{KAFKA_PASSWORD}";'
 KAFKA_SSL_TRUSTSTORE_LOCATION = args['KAFKA_SSL_TRUSTSTORE_LOCATION']
 KAFKA_SSL_TRUSTSTORE_PASSWORD = args['KAFKA_SSL_TRUSTSTORE_PASSWORD']
 KAFKA_SUBSCRIBE = args['KAFKA_SUBSCRIBE']
