@@ -1,9 +1,3 @@
 qualityConfig:
   application:
-    name: bots-reward-data-process-pipeline-task
-    owner: Commerce Launch Fairness
-    team: Commerce Launch Fairness
-    email: Lst-gc-cdn-antibots.admin@nike.com
-    costcenter: 104420
-    organization: Web Eng - nike.com Cloud Capability
-    domain: gc-cdn-antibots
+    name: bots-taijitu-s3-data-sync

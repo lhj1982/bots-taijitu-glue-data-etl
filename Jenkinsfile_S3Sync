@@ -1,0 +1,191 @@
+#!groovy
+@Library(['cicd-pipeline', 'cop-pipeline-configuration']) _
+
+def appName = "bots-taijitu-s3-data-sync"
+def teamName = "SecurityBotTeam"
+def version = "1.0.0"
+
+// node {
+//     checkout scm
+//     extractVersionInfo(versionStrategy: 'gradleProperties')
+//     version = readFile(file: '.pipeline/version/version.txt')
+// }
+
+def config = [
+        usePraDispatch       : false,
+        buildFlow            : [
+                PULL_REQUEST    : ['Build'],
+                DEVELOPMENT     : ['Build', 'Compile', 'Quality Gate', 'AMI', 'Smart Share'],
+                RELEASE         : ['Build', 'Compile', 'Smart Share']
+        ],
+        branchMatcher        : [
+                RELEASE         : ['main'],
+                DEVELOPMENT     : ['^(?!main).*$'],
+                pipelineTestFlow: ['(.*?)']
+        ],
+        notify               : [
+                slack: [
+                        channel    : "#webb-portal-deploy",
+                        onCondition: ['Build Start', 'Success', 'Unstable', 'Failure', 'Aborted']
+                ]
+        ],
+        qma                  : [
+                configFile: 'quality-config.yaml'
+        ],
+        pra                  : [
+                sdbPath: "shared/bmx-service-user/github-enterprise-cloud-personal-access-token",
+                userNameKey: "username",
+                passwordKey: "accesstoken"
+        ],
+        build                : [
+                image: "gradle:jdk11",
+                cmd: 'echo test'
+        ],
+
+        // // Package config
+        package              : [
+                description    : 'Example Spring Boot application built as JAR used for testing EC2 pipeline in Jenkins 2',
+                packageName    : 'bots-taijitu-s3-data-sync',
+                priority       : 'required',
+                transformations: [
+                        [
+                                from  : 's3_sync.sh',
+                                into  : '/usr/local/taijitu/'
+                        ],
+                ],
+                version        : version,
+        ],
+
+        smartBake: [
+            default: [
+                accountId        : '751689567599',
+                awsRole          : 'idn-bmx-userservices-bakery-role-BaconatorRole-17XMWP1QW2RPH1',
+                region           : 'us-east-1',
+                vpcId            : 'vpc-0c8320c08103569bd',
+                subnets          : ['subnet-0877a8378bdb46e00', 'subnet-0635a2f919be1af88', 'subnet-0b48e37884ccffe5d'],
+                securityGroupName: 'CITBakingSg',
+                // https://github.com/nike-cop-pipeline/cop-pipeline-step/blob/main/vars/amiSelection.md
+                amiSelection     : ['osversion': '', 'quarter': '3.0', 'weeksback': '']
+            ],
+            chinaBakery: [
+                agentLabel: 'ec2-ondemand-agent-cn',
+                accountId: '439314357471', // account to bake the ami in
+                awsRole: 'arn:aws-cn:iam::439314357471:role/NIKE.cicd.tool',
+                region: 'cn-northwest-1',
+                vpcId: 'vpc-0f9779e69a780c25e',
+                subnets: ['subnet-075e204cb71470d70', 'subnet-0e64f859c59876536', 'subnet-0f02dd76225273efa'],
+                securityGroupName: 'CITBakingSg',
+                amiSelection: ['osversion': '', 'quarter': '3.0', 'weeksback': ''],
+                // presetupScriptPath : 'change-hosts.sh',
+                // mavenMetadataUrl : 'https://artifactory.nike.com/artifactory/foundation-ami-release/release/cn-ami-info/foundation-release-nike-ubuntu2004-3.0-ami/maven-metadata.xml',
+                amiSelection     : ['osversion': '', 'quarter': '3.0', 'weeksback': ''],
+            ]
+        ],
+        share                : [
+                sourceAccountId: '020484671131',
+                accounts       : [
+                        '439314357471': [ 'cn-northwest-1'],  // LITX test china
+                        '439413396736': [ 'cn-northwest-1'],  // LITX prod china
+                ],
+        ],
+        application          : [
+                name      : appName,
+                group     : teamName,
+                version   : version,
+        ],
+        deploymentEnvironment: [
+                "testCN": [
+                        agentLabel      : 'ec2-ondemand-agent-cn',
+                        deployFlow      : [
+                                DEVELOPMENT: ["Deploy"],
+                                RELEASE         : ['Deploy'],
+                        ],
+                        cloudEnvironment: "test",
+                        deploy          : [
+                                // Account Information
+                                accountId                     : '439314357471', //Target AWS Account id
+                                region                        : 'cn-northwest-1',
+                                // Roles
+                                awsAssumeRole: 'NIKE.cicd.tool',// Role assumed by the BMX to do Cloudformation operations
+                                cfnPassRoleName: 'NIKE.cicd.deploy',// Roles assumed by the Cloudformation stack to manage application resources
+                                // Networking
+                                vpcId                         : 'vpc-0f9779e69a780c25e',
+                                subnets                       : ['subnet-05abf20a7b7d9cfac', 'subnet-06da179024e04fbbd', 'subnet-0da1766492b750893'],
+                                securityGroups                : [
+                                                                  'sg-0676976675a94e49e'
+                                                                ],
+                                // instance settings
+                                desiredCapacity               : 1,
+                                maxSize                       : 1,
+                                minSize                       : 1,
+                                instanceType                  : 't3.micro',
+                                associatePublicIp             : true,
+                                ebsOptimized                  : false,
+                                includeDefaultScheduledActions: false,
+                                iamInstanceProfile            : 'arn:aws-cn:iam::439314357471:instance-profile/taijitu-s3-sync/bots-taijitu-s3-sync-ec2-instance-profile',
+                                useDefaultTargetGroup         : true,
+                                userData: [
+                                    OutputDir: "s3://bots-taijitu-test-439314357471-flatted-data/",
+                                    AthenaTableDir: "s3://bots-taijitu-test-439314357471-athena-table-data/"
+                                ],
+                        ],
+                        tags            : [
+                                'nike-environment': "test",
+                        ],
+                ],
+                "prodCN": [
+                        agentLabel      : 'ec2-ondemand-agent-cn',
+                        deployFlow      : [
+                                DEVELOPMENT: ["Deploy"],
+                                RELEASE         : ['Deploy'],
+                        ],
+                        cloudEnvironment: "prod",
+                        deploy          : [
+                                // Account Information
+                                accountId                     : '439413396736', //Target AWS Account id
+                                region                        : 'cn-northwest-1',
+                                // Roles
+                                awsAssumeRole: 'NIKE.cicd.tool',// Role assumed by the BMX to do Cloudformation operations
+                                cfnPassRoleName: 'NIKE.cicd.deploy',// Roles assumed by the Cloudformation stack to manage application resources
+                                // Networking
+                                vpcId                         : 'vpc-01472d21bb792d03e',
+                                subnets                       : ['subnet-054062238d2327b0e', 'subnet-0b23b05edb4035d28', 'subnet-07b7c0ab40a91ae55'],
+                                securityGroups                : [
+                                                                  'sg-0127e3f882f1de27d'
+                                                                ],
+                                // instance settings
+                                desiredCapacity               : 1,
+                                maxSize                       : 1,
+                                minSize                       : 1,
+                                instanceType                  : 't3.micro',
+                                associatePublicIp             : true,
+                                ebsOptimized                  : false,
+                                includeDefaultScheduledActions: false,
+                                iamInstanceProfile            : 'arn:aws-cn:iam::439413396736:instance-profile/taijitu-s3-sync/bots-taijitu-s3-sync-ec2-instance-profile',
+                                useDefaultTargetGroup         : true,
+                                userData: [
+                                    OutputDir: "s3://bots-taijitu-prod-439413396736-flatted-data/",
+                                    AthenaTableDir: "s3://bots-taijitu-prod-439413396736-athena-table-data/"
+                                ],
+                        ],
+                        tags            : [
+                                'nike-environment': "prod",
+                        ],
+                ],
+        ],
+
+        tags: [
+            'Name'            		 : appName,
+            'costcenter'     		   : '104420',
+            'classification'  		 : 'Silver',
+            'email'           		 : 'Lst-nde.bots@nike.com',
+            'owner'           		 : teamName,
+            'nike-distributionlist': 'Lst-nde.bots@nike.com',
+            'nike-owner'           : 'frank.zhao@nike.com',
+            'nike-department' 		 : 'Web Eng - nike.com Cloud Capability',
+            'nike-domain'     		 : teamName,
+            'nike-application'		 : appName,
+        ]
+]
+
+ec2BlueGreenDeployPipeline(config)

@@ -1,10 +1,47 @@
 # Introduction
 The project contains several glue etl job definitions that read data from different sources (kinesis, kafka, s3 etc) to save them in the centralized S3 bucket in data account.
 
-## Setup
+# General Overview
+* Get data from difference data sources (not necessarily in LITX aws account, actually, they should NOT in the target data lake account)
+* Support receiving data in different ways, such as Kinesis Data Stream, Kafka Data Stream, file delivery etc. Installation will be slightly different, more details followed
+* ETL job scripts are installed in source accounts, streaming data into S3 on target aws account
+* Respective glue crawler jobs will be defined per data source in data account S3 bucket location
+* Crawler is scheduled to run periodically to refresh data into respective athena tables
+* **Note** S3 bucket to save ETL results and athena tables are different, due to the fact the ETL might generate some metadata files which athena tables cannot recognize, we use a sync script from ETL bucket to athena table bucket, exclude those files.
+
+## Setup Kinesis Streaming ETL
+### Prerequisites
+* awscli, jupyter notebook, python3+, gimme-aws-cred, make cli
+* 2 AWS account, one contain source data and a kinesis data stream subscribe to it, the other is destination aws account where the ETL should save the data to
+
+### In source data account
 * run application_account_resource.yaml in source aws account
-* run data_account_resource.yaml in target data account
+* make sure variables in Makefile is correct
+* Run the following command
+```
+// generate aws token
+make generate-aws-credentials env=test|prod
+// convert jupyter notebook to python script
+make convert-to-python
+// create new job
+make create-job env=test|prod
+// update job
+make update-job env=test|prod
+```
+### In target data account
 * run data_s3_resource.yaml in target data account
+* run data_account_glue_tables_resources.yaml in target data account
+* run the following sync script, it will sync all launch entries data from etl bucket to athena bucket.
+There are 2 alternatives to sync buckets
+  - Running local
+  ```
+  make sync-athena-launch-entries-bucket env=test|prod
+  ```
+  - Running as crontab
+    * Make sure an EC2 is deployed to LITX account, using Jenkinsfile_S3Sync
+    * Update variable in the **s3_sync.sh** script to match the environment
+    * Add crontab job according to the description in script
+
 
 ## Kinesis connection
 Deploy glue etl job in the same account as kds is located
@@ -12,17 +49,27 @@ Deploy glue etl job in the same account as kds is located
 ## Kafka connection
 
 ## Key Resources
-All processed data should be saved under LITX aws account, 
+All processed data should be saved under LITX aws account
 
 # Deploy glue job using aws cli
 Upload py file to S3 bucket
 
 ```
-aws glue create-job --name python-redshift-test-cli --role role --command '{"Name" :  "pythonshell", "ScriptLocation" : "s3://MyBucket/python/library/redshift_test.py"}' 
-     --connections Connections=connection-name --default-arguments '{"--extra-py-files" : ["s3://DOC-EXAMPLE-BUCKET/EGG-FILE", "s3://DOC-EXAMPLE-BUCKET/WHEEL-FILE"]}'
+JOB_NAME=xxx
+JOB_ROLE=arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role
+TempDir=s3://aws-glue-assets-734176943427-cn-northwest-1/temporary/
+OutputDir=s3://bots-taijitu-test-439314357471-flatted-data
+aws glue create-job --name ${JOB_NAME} --profile CommerceGCTest \
+--role ${JOB_ROLE} \
+--command '{"Name" :  "gluestreaming", "ScriptLocation" : "s3://aws-glue-assets-734176943427-cn-northwest-1/scripts/kinesis_handler.py", "PythonVersion": "3"}' \
+--tags '{"nike-tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"}' \
+--glue-version 4.0 \
+--number-of-workers 2 \
+--worker-type G.1X \
+--default-arguments '{"--enable-glue-datacatalog" : "true", "--TempDir": "'${TempDir}'", "--OutputDir": "'${OutputDir}'"}'
 ```
 
-# Deploy and debug in local
+# Deploy and debug in local (Not Working)
 Reference: https://towardsaws.com/how-to-run-aws-glue-jobs-locally-using-visual-studio-code-vs-code-127a9bb10bd1
 ## Prerequisites
 awscli, docker vs code
@@ -54,15 +101,13 @@ docker run -it -v ~/.aws:/home/glue_user/.aws -v $WORKSPACE_LOCATION:/home/glue_
 
 ```
 
-
-
 Convert ipynb to python script
 ```
-jupyter nbconvert --to script *.ipynb
+jupyter nbconvert --to python *.ipynb
 ```
 
-
-# Put record to kinesis
+# Testing
+## Put record to kinesis
 ```
 aws kinesis put-record --stream-name launch-entry-eda-data-stream --partition-key 1 \
     --data "<base64 encoded string>" \
@@ -114,7 +159,7 @@ Launch entry example in ddb
 
 a ddb stream event looks like
 
-## Insert
+### Insert
 ```
 {
   "awsRegion": "cn-northwest-1",
@@ -253,13 +298,12 @@ aws kinesis put-record --stream-name launch-entry-eda-data-stream --partition-ke
     --region cn-northwest-1
 ```
 
-
-## Update
+### Update
 ```
 {"awsRegion":"cn-northwest-1","eventID":"fd5772af-6b44-408a-a66b-e05b64c816a4","eventName":"MODIFY","userIdentity":null,"recordFormat":"application/json","tableName":"launch.winnerselector.entry","dynamodb":{"ApproximateCreationDateTime":1725932134565,"Keys":{"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"}},"NewImage":{"userAgent":{"S":"SNKRS/6.6.0 (prod; 2407181638; iOS 16.6.1; iPhone13,4)"},"traceContext":{"S":"v1:9655238fd3131624:702c742b47e20b6a:1"},"currency":{"S":"CNY"},"launchSkuStatusValidation":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER:VALID"},"reservationJobId":{"S":"ed9a9e59-f6b9-4b9c-93ee-de211e628c66"},"userType":{"S":"nike:plus"},"status":{"S":"WINNER"},"retailPickupPerson":{"S":"null"},"skuId":{"S":"8b91811a-95ec-5099-ad5f-c25f1a4ca601"},"launchId":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892"},"channel":{"S":"SNKRS"},"geolocation":{"S":"null"},"shipping":{"S":"{\"recipient\":{\"firstName\":\"文杰\",\"lastName\":\"盛\",\"phoneNumber\":\"18112885616\"},\"address\":{\"address1\":\"荷花池街道荷花池公寓19-6号\",\"city\":\"常州市\",\"state\":\"CN-32\",\"postalCode\":\"213000\",\"country\":\"CN\",\"county\":\"钟楼区\"},\"method\":null,\"getBy\":{\"maxDate\":{\"dateTime\":\"2024-09-09T02:25:01.582Z\",\"timezone\":\"Asia/Shanghai\",\"precision\":\"DAY\"}}}"},"paymentToken":{"S":"37086c07-d868-4a0f-a83e-769e9e6270ff"},"postpayRetry":{"BOOL":false},"paymentStatus":{"S":"PENDING_PAYMENT"},"selectedTimestamp":{"N":"1725238925578"},"upmId":{"S":"03c3403f-7d54-48f3-8ddb-f27d1ce611dd"},"reservationId":{"S":"P26cbda24e98d4bcdb75927a557df9b3d"},"creationTimestamp":{"N":"1725238816172"},"waitingReason":{"NULL":true},"totals":{"S":"{\"items\":{\"total\":1099.0,\"details\":{\"price\":1099.0,\"discount\":0.0}},\"taxes\":{\"details\":{\"items\":{\"type\":\"NOT_CALCULATED\"}}},\"fulfillment\":{\"total\":0.0,\"details\":{\"price\":0.0,\"discount\":0.0}}}"},"validationSummary":{"S":"{\"result\":\"VALID\"}"},"sort":{"N":"151212521"},"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"},"checkoutId":{"S":"d3e98748-94fe-476a-9097-24b9084a233d"},"locale":{"S":"zh_CN"},"trueClientIp":{"S":"114.227.98.25"},"postpayLink":{"S":"https://www.nike.com/omega"},"reservationTimestamp":{"N":"1725238922070"},"rank":{"N":"-1"},"reentryPermitted":{"BOOL":false},"forwardedFor":{"S":"114.227.98.25, 10.120.25.209, 58.222.47.172, 39.96.130.111"},"launchSkuStatus":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER"},"appId":{"S":"com.nike.commerce.snkrs.ios"}},"OldImage":{"userAgent":{"S":"SNKRS/6.6.0 (prod; 2407181638; iOS 16.6.1; iPhone13,4)"},"traceContext":{"S":"v1:9655238fd3131624:702c742b47e20b6a:1"},"currency":{"S":"CNY"},"launchSkuStatusValidation":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER:VALID"},"reservationJobId":{"S":"ed9a9e59-f6b9-4b9c-93ee-de211e628c66"},"userType":{"S":"nike:plus"},"status":{"S":"WINNER"},"retailPickupPerson":{"S":"null"},"skuId":{"S":"8b91811a-95ec-5099-ad5f-c25f1a4ca601"},"launchId":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892"},"channel":{"S":"SNKRS"},"geolocation":{"S":"null"},"shipping":{"S":"{\"recipient\":{\"firstName\":\"文杰22\",\"lastName\":\"盛\",\"phoneNumber\":\"18112885616\"},\"address\":{\"address1\":\"荷花池街道荷花池公寓19-6号\",\"city\":\"常州市\",\"state\":\"CN-32\",\"postalCode\":\"213000\",\"country\":\"CN\",\"county\":\"钟楼区\"},\"method\":null,\"getBy\":{\"maxDate\":{\"dateTime\":\"2024-09-09T02:25:01.582Z\",\"timezone\":\"Asia/Shanghai\",\"precision\":\"DAY\"}}}"},"paymentToken":{"S":"37086c07-d868-4a0f-a83e-769e9e6270ff"},"postpayRetry":{"BOOL":false},"paymentStatus":{"S":"PENDING_PAYMENT"},"selectedTimestamp":{"N":"1725238925578"},"upmId":{"S":"03c3403f-7d54-48f3-8ddb-f27d1ce611dd"},"reservationId":{"S":"P26cbda24e98d4bcdb75927a557df9b3d"},"creationTimestamp":{"N":"1725238816172"},"waitingReason":{"NULL":true},"totals":{"S":"{\"items\":{\"total\":1099.0,\"details\":{\"price\":1099.0,\"discount\":0.0}},\"taxes\":{\"details\":{\"items\":{\"type\":\"NOT_CALCULATED\"}}},\"fulfillment\":{\"total\":0.0,\"details\":{\"price\":0.0,\"discount\":0.0}}}"},"validationSummary":{"S":"{\"result\":\"VALID\"}"},"sort":{"N":"151212521"},"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"},"checkoutId":{"S":"d3e98748-94fe-476a-9097-24b9084a233d"},"locale":{"S":"zh_CN"},"trueClientIp":{"S":"114.227.98.25"},"postpayLink":{"S":"https://www.nike.com/omega"},"reservationTimestamp":{"N":"1725238922070"},"rank":{"N":"-1"},"reentryPermitted":{"BOOL":false},"forwardedFor":{"S":"114.227.98.25, 10.120.25.209, 58.222.47.172, 39.96.130.111"},"launchSkuStatus":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER"},"appId":{"S":"com.nike.commerce.snkrs.ios"}},"SizeBytes":3444},"eventSource":"aws:dynamodb"}
 ```
 
-## Delete
+### Delete
 ```
 {"awsRegion":"cn-northwest-1","eventID":"005d9251-8fa3-4ba0-a9d1-d6a074d7f990","eventName":"REMOVE","userIdentity":null,"recordFormat":"application/json","tableName":"launch.winnerselector.entry","dynamodb":{"ApproximateCreationDateTime":1725932144754,"Keys":{"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"}},"OldImage":{"userAgent":{"S":"SNKRS/6.6.0 (prod; 2407181638; iOS 16.6.1; iPhone13,4)"},"traceContext":{"S":"v1:9655238fd3131624:702c742b47e20b6a:1"},"currency":{"S":"CNY"},"launchSkuStatusValidation":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER:VALID"},"reservationJobId":{"S":"ed9a9e59-f6b9-4b9c-93ee-de211e628c66"},"userType":{"S":"nike:plus"},"status":{"S":"WINNER"},"retailPickupPerson":{"S":"null"},"launchId":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892"},"skuId":{"S":"8b91811a-95ec-5099-ad5f-c25f1a4ca601"},"channel":{"S":"SNKRS"},"geolocation":{"S":"null"},"shipping":{"S":"{\"recipient\":{\"firstName\":\"文杰\",\"lastName\":\"盛\",\"phoneNumber\":\"18112885616\"},\"address\":{\"address1\":\"荷花池街道荷花池公寓19-6号\",\"city\":\"常州市\",\"state\":\"CN-32\",\"postalCode\":\"213000\",\"country\":\"CN\",\"county\":\"钟楼区\"},\"method\":null,\"getBy\":{\"maxDate\":{\"dateTime\":\"2024-09-09T02:25:01.582Z\",\"timezone\":\"Asia/Shanghai\",\"precision\":\"DAY\"}}}"},"paymentToken":{"S":"37086c07-d868-4a0f-a83e-769e9e6270ff"},"postpayRetry":{"BOOL":false},"paymentStatus":{"S":"PENDING_PAYMENT"},"selectedTimestamp":{"N":"1725238925578"},"upmId":{"S":"03c3403f-7d54-48f3-8ddb-f27d1ce611dd"},"reservationId":{"S":"P26cbda24e98d4bcdb75927a557df9b3d"},"creationTimestamp":{"N":"1725238816172"},"waitingReason":{"NULL":true},"totals":{"S":"{\"items\":{\"total\":1099.0,\"details\":{\"price\":1099.0,\"discount\":0.0}},\"taxes\":{\"details\":{\"items\":{\"type\":\"NOT_CALCULATED\"}}},\"fulfillment\":{\"total\":0.0,\"details\":{\"price\":0.0,\"discount\":0.0}}}"},"validationSummary":{"S":"{\"result\":\"VALID\"}"},"sort":{"N":"151212521"},"id":{"S":"83f666b2-23ad-5c68-9ccc-1248e7005aff"},"checkoutId":{"S":"d3e98748-94fe-476a-9097-24b9084a233d"},"locale":{"S":"zh_CN"},"trueClientIp":{"S":"114.227.98.25"},"postpayLink":{"S":"https://www.nike.com/omega"},"reservationTimestamp":{"N":"1725238922070"},"rank":{"N":"-1"},"reentryPermitted":{"BOOL":false},"forwardedFor":{"S":"114.227.98.25, 10.120.25.209, 58.222.47.172, 39.96.130.111"},"launchSkuStatus":{"S":"24b75183-ced8-3ec8-978a-4dd3d735e892:8b91811a-95ec-5099-ad5f-c25f1a4ca601:WINNER"},"appId":{"S":"com.nike.commerce.snkrs.ios"}},"SizeBytes":1740},"eventSource":"aws:dynamodb"}
 ```

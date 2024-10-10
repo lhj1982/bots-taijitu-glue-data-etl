@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   Service s3 for glue data center account for bots-taijitu
+  A s3 bucket to save all processed data from different sources, defined necessary permission for this bucket, in case it need cross-account write access
   stackName=bots-taijitu-data-account-s3-resources
 Parameters:
   ENV:
@@ -14,7 +15,7 @@ Mappings:
   AccountMap:
     # China Prod
     "prod":
-      AssumeIAMRoleArn: "arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role"
+      AssumeIAMRoleArn: "arn:aws-cn:iam::734147128161:role/bots-taijitu-glue-etl-role"
     # China Test
     "test":
       AssumeIAMRoleArn: "arn:aws-cn:iam::734176943427:role/bots-taijitu-glue-etl-role"
@@ -45,7 +46,6 @@ Resources:
           Value: !FindInMap [ResourceTagMap, NikeStandardTags, distributionlist]
         - Key: "nike-environment"
           Value: !FindInMap [ResourceTagMap, NikeStandardTags, environment]
-        
   DataS3LocationBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -55,9 +55,37 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: 'arn:aws-cn:iam::734176943427:root'
+              AWS: !FindInMap [AccountMap, !Ref ENV, AssumeIAMRoleArn]
             Action: 
               - 's3:*'
             Resource: 
               - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}'
               - !Sub 'arn:${AWS::Partition}:s3:::${DataS3LocationBucket}/*'
+
+  DataAthenaS3LocationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'bots-taijitu-${ENV}-${AWS::AccountId}-athena-table-data'
+      Tags:
+        - Key: "nike-tagguid"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, tagguid]
+        - Key: "nike-application"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, application]
+        - Key: "nike-department"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, department]
+        - Key: "nike-owner"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, owner]
+        - Key: "nike-distributionlist"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, distributionlist]
+        - Key: "nike-environment"
+          Value: !FindInMap [ResourceTagMap, NikeStandardTags, environment]
+Outputs:
+  DataS3LocationBucketArn:
+    Value: !GetAtt DataS3LocationBucket.Arn
+    Description: "The ARN of the s3 bucket for storing processed data"
+  DataS3LocationBucketName:
+    Value: !Ref DataS3LocationBucket
+    Description: "The name of the s3 bucket for storing processed data"
+  DataAthenaS3LocationBucketArn:
+    Value: !GetAtt DataAthenaS3LocationBucket.Arn
+    Description: "The ARN of the s3 bucket for storing athena table data"

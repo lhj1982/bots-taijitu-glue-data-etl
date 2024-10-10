@@ -1,0 +1,332 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Service role for glue tables and crawlers in data center account for bots-taijitu, 
+  it defines athena tables per domain
+  stackName=bots-taijitu-data-account-glue-tables-resources
+Parameters:
+  ENV:
+    Type: String
+    Default: "test"
+    AllowedValues:
+      - "test"
+      - "prod"
+Mappings:
+  Accounts:
+    "test": #cn test
+      LAUNCHENTRIES3PATH: "s3://bots-taijitu-test-439314357471-athena-table-data/launch-entries/"
+      TAIJITUATHENAS3BucketArn: "s3://bots-taijitu-test-439314357471-athena-table-data"
+      TAIJITURAWS3BucketArn: "s3://bots-taijitu-test-439314357471-athena-table-data"
+    "prod": #cn prod
+      LAUNCHENTRIES3PATH: "s3://bots-taijitu-prod-439413396736-athena-table-data/launch-entries/"
+      TAIJITUATHENAS3BucketArn: "s3://bots-taijitu-prod-439413396736-athena-table-data"
+      TAIJITURAWS3BucketArn: "s3://bots-taijitu-prod-439413396736-athena-table-data"
+  ResourceTagMap:
+    NikeStandardTags:
+      "application": "bots-taijitu-data-etl"
+      "department": "Web Eng - nike.com Cloud Capability"
+      "domain": "DTC - CiC Bots"
+      "owner": "frank.zhao@nike.com"
+      "distributionlist": "Lst-gc-cdn-antibots.admin@nike.com"
+      "environment": "prod"
+      "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
+Resources:
+  S3SyncEC2IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: bots-taijitu-s3-sync-ec2-instance-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEC2FullAccess"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/SecretsManagerReadWrite"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy"
+      Path: "/"
+  RolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: bots-taijiu-s3-sync-ec2-instance-policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement: # Example policy statement - Update as appropriate for _app_
+          - Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-athena-table-data"
+                - ENV: !Ref ENV
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-flatted-data"
+                - ENV: !Ref ENV
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-athena-table-data/*"
+                - ENV: !Ref ENV
+              - !Sub 
+                - "arn:${AWS::Partition}:s3:::bots-taijitu-${ENV}-${AWS::AccountId}-flatted-data/*"
+                - ENV: !Ref ENV
+          - Effect: Allow
+            Action: logs:PutRetentionPolicy
+            Resource: "*"
+      Roles:
+        - !Ref S3SyncEC2IAMRole
+  S3SyncEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: bots-taijitu-s3-sync-ec2-instance-profile
+      Path: "/taijitu-s3-sync/"
+      Roles: 
+        - !Ref S3SyncEC2IAMRole
+  TaijituGlueCrawlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: bots-taijitu-glue-crawler-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - glue.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSGlueServiceRole'
+      Path: '/'
+      Policies:
+        - PolicyName: AWSGlueServiceRole-taijitu-glue-crawler-s3-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Stmt1447810840002
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - '*'
+  TaijituGlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: bots_taijitu_db
+        Description: glue database for storing launch related bots taijitu tables from various sources
+  LaunchEntryTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref TaijituGlueDatabase
+      TableInput:
+        Description: launch entries
+        Name: launch_entries
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Columns:
+            - Name: id
+              Type: string
+            - Name: appid
+              Type: string
+            - Name: channel
+              Type: string
+            - Name: checkoutid
+              Type: string
+            - Name: creationtimestamp
+              Type: string
+            - Name: currency
+              Type: string
+            - Name: forwardedfor
+              Type: string
+            - Name: geolocation
+              Type: string
+            - Name: launchid
+              Type: string
+            - Name: launchSkuStatus
+              Type: string
+            - Name: launchSkuStatusValidation
+              Type: string
+            - Name: locale
+              Type: string
+            - Name: paymentstatus
+              Type: string
+            - Name: paymenttoken
+              Type: string
+            - Name: postpaylink
+              Type: string
+            - Name: postpayretry
+              Type: boolean
+            - Name: rank
+              Type: string
+            - Name: retrypermitted
+              Type: boolean
+            - Name: reservationid
+              Type: string
+            - Name: reservationjobid
+              Type: string
+            - Name: reservationtimestamp
+              Type: string
+            - Name: retailpickuperson
+              Type: string
+            - Name: selectedtimestamp
+              Type: string
+            - Name: skuid
+              Type: string
+            - Name: sort
+              Type: string
+            - Name: status
+              Type: string
+            - Name: upmid
+              Type: string
+            - Name: ttl
+              Type: string
+            - Name: tracecontext
+              Type: string
+            - Name: trueclientip
+              Type: string
+            - Name: useragent
+              Type: string
+            - Name: usertype
+              Type: string
+            - Name: waitingreason
+              Type: string
+            - Name: validationsummary_result
+              Type: string
+            - Name: shipping_recipient_firstname
+              Type: string
+            - Name: shipping_recipient_lastname
+              Type: string
+            - Name: shipping_recipient_phoneNumber
+              Type: string
+            - Name: shipping_address_address1
+              Type: string
+            - Name: shipping_address_city
+              Type: string
+            - Name: shipping_address_state
+              Type: string
+            - Name: shipping_address_postalcode
+              Type: string
+            - Name: shipping_address_country
+              Type: string
+            - Name: shipping_address_county
+              Type: string
+            - Name: shipping_method
+              Type: string
+            - Name: metadata_eventId
+              Type: string
+            - Name: metadata_eventName
+              Type: string
+            - Name: metadata_tableName
+              Type: string
+            - Name: db_item_creationdatetime
+              Type: string
+            - Name: db_item_key
+              Type: string
+          Location: !FindInMap [ Accounts, !Ref ENV, LAUNCHENTRIES3PATH ]
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          Compressed: true
+          NumberOfBuckets: -1
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.serde2.OpenCSVSerde
+            Parameters:
+              "quoteChar": "\""
+              "separatorChar": ","
+              "escapeChar": "\\"
+              "skip.header.line.count": "1"
+          # Parameters:
+          #   "skip.header.line.count": "1"
+          #   "objectCount": "1"
+          #   "UPDATED_BY_CRAWLER": "taijitu-athena-launch-entries-crawler"
+          #   "CrawlerSchemaSerializerVersion": "1.0"
+          #   "partition_filtering.enabled": "true"
+          #   "CrawlerSchemaDeserializerVersion": "1.0"
+          #   "compressionType": "gzip"
+          #   "classification": "csv"
+          #   "columnsOrdered": "true"
+          #   "areColumnsQuoted": "false"
+          #   "delimiter": ","
+          #   "typeOfData": "file"
+        PartitionKeys:
+          - Name: year
+            Type: string
+          - Name: month
+            Type: string
+          - Name: day
+            Type: string
+        Parameters:
+          "EXTERNAL": TRUE
+          # "skip.header.line.count": "1"
+          # "UPDATED_BY_CRAWLER": "taijitu-athena-launch-entries-crawler"
+          # "CrawlerSchemaSerializerVersion": "1.0"
+          # "partition_filtering.enabled": "true"
+          # "CrawlerSchemaDeserializerVersion": "1.0"
+          # "compressionType": "gzip"
+          "classification": "csv"
+          # "columnsOrdered": "true"
+          # "areColumnsQuoted": "false"
+          # "delimiter": ","
+          # "typeOfData": "file"
+  GeneralCSVClassifier:
+    Type: AWS::Glue::Classifier
+    Properties:
+      CsvClassifier: 
+        Name: general-csv-classifier
+        Delimiter: ","
+        QuoteSymbol: "\""
+        ContainsHeader: "PRESENT"
+        DisableValueTrimming: false
+        AllowSingleColumn: true
+  LaunchEntriesCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Description: Taijitu table crawler for launch entries
+      Name: bots-taijitu-launch-entries-crawler
+      Configuration: "{\"Version\":1.0,\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"}}}"
+      # CrawlerSecurityConfiguration:
+      DatabaseName: !Ref TaijituGlueDatabase
+      Classifiers:
+        - !Ref GeneralCSVClassifier
+      Role: !Ref TaijituGlueCrawlerRole
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      SchemaChangePolicy:
+        DeleteBehavior: LOG
+        UpdateBehavior: LOG
+      # TablePrefix: 'launch_'
+      Schedule:
+        ScheduleExpression: 'cron(0 18 * * ? *)'
+      Targets:
+        CatalogTargets:
+          - DatabaseName: !Ref TaijituGlueDatabase
+            Tables:
+              - !Ref LaunchEntryTable
+        # S3Targets:
+        #   - Path: !FindInMap [ Accounts, !Ref 'AWS::AccountId', FLAGGEDUSERS3PATH ]
+      Tags:
+        "nike-application": !FindInMap [ ResourceTagMap, NikeStandardTags, application ]
+        "nike-department": !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
+        "nike-domain": !FindInMap [ ResourceTagMap, NikeStandardTags, domain ]
+        "nike-owner": !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
+        "nike-distributionlist": !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
+        "nike-environment": !Ref ENV
+        "nike-tagguid": !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
+Outputs:
+  S3SyncEC2InstanceProfile:
+    Value: !Ref S3SyncEC2InstanceProfile
+    Description: "The instance profile for the ec2 instance that syncs data to s3"
+  TaijituGlueCrawlerRoleArn:
+    Value: !GetAtt TaijituGlueCrawlerRole.Arn
+    Description: "The ARN of the Glue etl job IAM Role"
+  TaijituGlueDatabaseName:
+    Value: !Ref TaijituGlueDatabase
+    Description: "The name of the glue database for storing launch related bots taijitu tables from various sources"
+  LaunchEntryTableName:
+    Value: !Ref LaunchEntryTable
+    Description: "The name of the launch entries table"
+  LaunchEntriesCrawlerName:
+    Value: !Ref LaunchEntriesCrawler
+    Description: "The name of the crawler for launch entries"
