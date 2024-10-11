@@ -63,7 +63,7 @@ def config = [
                     KafkaSslTruststoreS3Location : 's3://bot-taijitu-etl-script-test/etl-waf/entry/test.kafka.truststore.jks',
                     KafkaSslTruststoreLocalLocation : '/tmp/test.kafka.truststore.jks',
                     KafkaSslTruststorePassword : 'KafkaOnsClient',
-                    KafkaSubscribe: 'test',
+                    KafkaSubscribe: 'ali_waf',
                     DataLocation : 's3://bots-taijitu-test-439314357471-flatted-data/waf-entry/data',
                     CheckPointLocation : 's3://bots-taijitu-test-439314357471-flatted-data/waf-entry/checkpoint'
                 ],

@@ -46,6 +46,7 @@ kafka_params = {
     "kafka.ssl.truststore.password": KAFKA_SSL_TRUSTSTORE_PASSWORD,
     "kafka.ssl.endpoint.identification.algorithm": "",
     "subscribe": KAFKA_SUBSCRIBE,
+    "group.id": "waf_entry",
     "startingoffsets": "latest"
 }
 
