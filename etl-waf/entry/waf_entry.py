@@ -4,7 +4,8 @@ from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
-from pyspark.sql.functions import col, from_json, explode_outer, current_timestamp, lpad, year, month, dayofmonth
+from pyspark.sql.functions import col, from_json, explode_outer, current_timestamp, lpad, year, month, dayofmonth, \
+    translate, regexp_replace
 from pyspark.sql.types import StringType, StructType, StructField, ArrayType, DoubleType
 
 
@@ -49,29 +50,6 @@ kafka_params = {
     "group.id": "waf_entry",
     "startingoffsets": "latest"
 }
-
-schema = StructType([
-    StructField("host", StringType(), True),
-    StructField("http_user_agent", StringType(), True),
-    StructField("https", StringType(), True),
-    StructField("http_cookie", StringType(), True),
-    StructField("real_client_ip", StringType(), True),
-    StructField("status", StringType(), True),
-    StructField("request_method", StringType(), True),
-    StructField("request_body", StringType(), True),
-    StructField("request_path", StringType(), True),
-    StructField("request_traceid", StringType(), True),
-    StructField("time", StringType(), True),
-    StructField("user_id", StringType(), True),
-    StructField("wxbb_info_tbl", StringType(), True),
-])
-
-df = spark.readStream.format("kafka") \
-    .options(**kafka_params) \
-    .load() \
-    .selectExpr("CAST(value AS STRING)") \
-    .select(from_json("value", schema).alias("data")) \
-    .select("data.*")
 
 request_body_schema = StructType([
     StructField("launchId", StringType(), nullable=True),
@@ -160,10 +138,10 @@ request_body_schema = StructType([
     StructField("offerId", StringType(), nullable=True),
     StructField("postpayLink", StringType(), nullable=True),
     StructField("invoiceInfo", ArrayType(StructType([
-                        StructField("type", StringType(), nullable=True),
-                        StructField("detail", StringType(), nullable=True),
-                        StructField("taxId", StringType(), nullable=True)
-                    ])), nullable=True),
+        StructField("type", StringType(), nullable=True),
+        StructField("detail", StringType(), nullable=True),
+        StructField("taxId", StringType(), nullable=True)
+    ])), nullable=True),
     StructField("storeId", StringType(), nullable=True),
     StructField("retailPickupId", StringType(), nullable=True),
     StructField("geolocation", StructType([
@@ -176,7 +154,14 @@ request_body_schema = StructType([
     ]), nullable=True)
 ])
 
-request_body_df = df.withColumn('requestBody', from_json(col('request_body'), request_body_schema)) \
+df = spark.readStream.format("kafka") \
+    .options(**kafka_params) \
+    .load() \
+    .selectExpr("CAST(value AS STRING)") \
+    .withColumn("value", translate(col("value"), "\n\t", "")) \
+    .withColumn("value", regexp_replace(col("value"), "^\"", "")) \
+    .withColumn("value", regexp_replace(col("value"), "\"$", "")) \
+    .withColumn('requestBody', from_json(col('value'), request_body_schema)) \
     .select(col('requestBody.*')) \
 
 def flatten(df):
@@ -208,7 +193,7 @@ def flatten(df):
     return df
 
 
-flatten_df = flatten(request_body_df)
+flatten_df = flatten(df)
 
 query = flatten_df.withColumn("current_timestamp", current_timestamp()) \
     .withColumn("year", year(col("current_timestamp"))) \
@@ -223,6 +208,7 @@ query = flatten_df.withColumn("current_timestamp", current_timestamp()) \
     .option("sep", ",") \
     .option("path", DATA_LOCATION) \
     .option("checkpointLocation", CHECKPOINT_LOCATION) \
+    .option("encoding", "UTF-8") \
     .start()
 
 query.awaitTermination()

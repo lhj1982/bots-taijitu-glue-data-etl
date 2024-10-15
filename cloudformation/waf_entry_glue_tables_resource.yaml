@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Service role for glue tables and crawlers in data center account for bots-taijitu, 
+  it defines athena tables per domain
+  stackName=waf-entry-glue-tables-resources
+Parameters:
+  ENV:
+    Type: String
+    Default: "test"
+    AllowedValues:
+      - "test"
+      - "prod"
+Mappings:
+  Accounts:
+    "test": #cn test
+      DATAPATH: "s3://bots-taijitu-test-439314357471-athena-table-data/waf-entry/data/"
+    "prod": #cn prod
+      DATAPATH: "s3://bots-taijitu-prod-439413396736-athena-table-data/waf-entry/data/"
+  ResourceTagMap:
+    NikeStandardTags:
+      "application": "bots-taijitu-data-etl"
+      "department": "Web Eng - nike.com Cloud Capability"
+      "domain": "DTC - CiC Bots"
+      "owner": "frank.zhao@nike.com"
+      "distributionlist": "Lst-gc-cdn-antibots.admin@nike.com"
+      "environment": "prod"
+      "tagguid": "648007d7-d23e-4bcc-8a5f-a40119600eda"
+Resources:
+  WafEntryTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: bots_taijitu_db
+      TableInput:
+        Description: waf entries
+        Name: waf_entries
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Columns:
+            - Name: launchId
+              Type: string
+            - Name: skuId
+              Type: string
+            - Name: locale
+              Type: string
+            - Name: currency
+              Type: string
+            - Name: paymentToken
+              Type: string
+            - Name: channel
+              Type: string
+            - Name: checkoutId
+              Type: string
+            - Name: deviceId
+              Type: string
+            - Name: previousEntryId
+              Type: string
+            - Name: offerId
+              Type: string
+            - Name: postpayLink
+              Type: string
+            - Name: storeId
+              Type: string
+            - Name: retailPickupId
+              Type: string
+            - Name: shipping_fulfillmentAnnotation
+              Type: string
+            - Name: invoiceInfo_type
+              Type: string
+            - Name: invoiceInfo_detail
+              Type: string
+            - Name: invoiceInfo_taxId
+              Type: string
+            - Name: geolocation_latitude
+              Type: string
+            - Name: geolocation_longitude
+              Type: string
+            - Name: retailPickupPerson_givenName
+              Type: string
+            - Name: retailPickupPerson_familyName
+              Type: string
+            - Name: shipping_recipient_firstName
+              Type: string
+            - Name: shipping_recipient_altFirstName
+              Type: string
+            - Name: shipping_recipient_lastName
+              Type: string
+            - Name: shipping_recipient_altLastName
+              Type: string
+            - Name: shipping_recipient_middleName
+              Type: string
+            - Name: shipping_recipient_phoneNumber
+              Type: string
+            - Name: shipping_recipient_email
+              Type: string
+            - Name: shipping_address_address1
+              Type: string
+            - Name: shipping_address_address2
+              Type: string
+            - Name: shipping_address_address3
+              Type: string
+            - Name: shipping_address_city
+              Type: string
+            - Name: shipping_address_state
+              Type: string
+            - Name: shipping_address_postalCode
+              Type: string
+            - Name: shipping_address_country
+              Type: string
+            - Name: shipping_address_county
+              Type: string
+            - Name: totals_items_total
+              Type: string
+            - Name: totals_valueAddedServices_total
+              Type: string
+            - Name: totals_taxes_total
+              Type: string
+            - Name: totals_fulfillment_total
+              Type: string
+            - Name: shipping_getBy_minDate_dateTime
+              Type: string
+            - Name: shipping_getBy_minDate_timezone
+              Type: string
+            - Name: shipping_getBy_minDate_precision
+              Type: string
+            - Name: shipping_getBy_maxDate_dateTime
+              Type: string
+            - Name: shipping_getBy_maxDate_timezone
+              Type: string
+            - Name: shipping_getBy_maxDate_precision
+              Type: string
+            - Name: totals_items_details_price
+              Type: string
+            - Name: totals_items_details_discount
+              Type: string
+            - Name: totals_valueAddedServices_details_price
+              Type: string
+            - Name: totals_valueAddedServices_details_discount
+              Type: string
+            - Name: totals_fulfillment_details_price
+              Type: string
+            - Name: totals_fulfillment_details_discount
+              Type: string
+            - Name: totals_taxes_details_items_tax
+              Type: string
+            - Name: totals_taxes_details_items_type
+              Type: string
+            - Name: totals_taxes_details_shipping_tax
+              Type: string
+            - Name: totals_taxes_details_shipping_type
+              Type: string
+            - Name: totals_taxes_details_valueAddedServices_tax
+              Type: string
+            - Name: totals_taxes_details_valueAddedServices_type
+              Type: string
+            - Name: current_timestamp
+              Type: string
+          Location: !FindInMap [ Accounts, !Ref ENV, DATAPATH ]
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          Compressed: true
+          NumberOfBuckets: -1
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.serde2.OpenCSVSerde
+            Parameters:
+              "quoteChar": "\""
+              "separatorChar": ","
+              "escapeChar": "\\"
+              "skip.header.line.count": "1"
+        PartitionKeys:
+          - Name: year
+            Type: string
+          - Name: month
+            Type: string
+          - Name: day
+            Type: string
+        Parameters:
+          "EXTERNAL": TRUE
+          "classification": "csv"
+  WafEntriesCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Description: Taijitu table crawler for waf entries
+      Name: bots-taijitu-waf-entries-crawler
+      Configuration: "{\"Version\":1.0,\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"}}}"
+      DatabaseName: bots_taijitu_db
+      Classifiers:
+        - general-csv-classifier
+      Role: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/bots-taijitu-glue-crawler-role'
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      SchemaChangePolicy:
+        DeleteBehavior: LOG
+        UpdateBehavior: LOG
+      Schedule:
+        ScheduleExpression: 'cron(0 18 * * ? *)'
+      Targets:
+        CatalogTargets:
+          - DatabaseName: bots_taijitu_db
+            Tables:
+              - !Ref WafEntryTable
+      Tags:
+        "nike-application": !FindInMap [ ResourceTagMap, NikeStandardTags, application ]
+        "nike-department": !FindInMap [ ResourceTagMap, NikeStandardTags, department ]
+        "nike-domain": !FindInMap [ ResourceTagMap, NikeStandardTags, domain ]
+        "nike-owner": !FindInMap [ ResourceTagMap, NikeStandardTags, owner ]
+        "nike-distributionlist": !FindInMap [ ResourceTagMap, NikeStandardTags, distributionlist ]
+        "nike-environment": !Ref ENV
+        "nike-tagguid": !FindInMap [ ResourceTagMap, NikeStandardTags, tagguid ]
+Outputs:
+  WafEntryTableName:
+    Value: !Ref WafEntryTable
+    Description: "The name of the waf entries table"
+  WafEntriesCrawlerName:
+    Value: !Ref WafEntriesCrawler
+    Description: "The name of the crawler for waf entries"

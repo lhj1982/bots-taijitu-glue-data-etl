@@ -38,12 +38,12 @@ def config = [
             ],
             s3: [
                 scriptUpload : [
-                    bucket          : 'bot-taijitu-etl-script-test',
+                    bucket          : 'bots-taijitu-test-439314357471-etl-script',
                     target          : 'etl-waf/entry/waf_entry.py',
                     source          : './etl-waf/entry/waf_entry.py'
                 ],
                 jksUpload : [
-                    bucket          : 'bot-taijitu-etl-script-test',
+                    bucket          : 'bots-taijitu-test-439314357471-etl-script',
                     target          : 'etl-waf/entry/test.kafka.truststore.jks',
                     source          : './etl-waf/entry/test.kafka.truststore.jks'
                 ]
@@ -51,16 +51,16 @@ def config = [
             lambda: [
                 stackname       : 'bots-taijitu-waf-entry-job-resource',
                 templateFile    : 'cloudformation/waf_entry_resource.yaml',
-                s3Bucket        : 'bot-taijitu-etl-script-test',
+                s3Bucket        : 'bots-taijitu-test-439314357471-etl-script',
                 s3Prefix        : 'etl-waf/entry/',
                 cfAssumeRole    : 'arn:aws-cn:iam::439314357471:role/NIKE.cicd.deploy',
                 parameters      : [
                     Env         : 'test',
-                    ScriptPath : 's3://bot-taijitu-etl-script-test/etl-waf/entry/waf_entry.py',
+                    ScriptPath : 's3://bots-taijitu-test-439314357471-etl-script/etl-waf/entry/waf_entry.py',
                     KafkaBootstrapServers : 'alikafka-post-cn-li93yay7t001-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-3.alikafka.aliyuncs.com:9093',
                     KafkaUserName : 'aliWafToTaijitu',
                     KafkaPassword : 'aliWafToTaijitu123',
-                    KafkaSslTruststoreS3Location : 's3://bot-taijitu-etl-script-test/etl-waf/entry/test.kafka.truststore.jks',
+                    KafkaSslTruststoreS3Location : 's3://bots-taijitu-test-439314357471-etl-script/etl-waf/entry/test.kafka.truststore.jks',
                     KafkaSslTruststoreLocalLocation : '/tmp/test.kafka.truststore.jks',
                     KafkaSslTruststorePassword : 'KafkaOnsClient',
                     KafkaSubscribe: 'ali_waf',
@@ -80,6 +80,76 @@ def config = [
                 'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
                 'nike-owner': 'frank.zhao@nike.com',
                 'nike-environment': 'test',
+            ],
+        ],
+        'prod': [
+            agentLabel      : 'china',
+            deployFlow: [
+                DEPLOY_PROD: ['S3Upload', 'Deploy'],
+            ],
+            cloudEnvironment: 'prod',
+            tags: [
+                'Name': 'bots-taijitu-glue-waf-entry',
+                'costcenter': '161961',
+                'classification': 'sliver',
+                'email': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'owner': 'gc-cdn-antibots',
+                'nike-department': 'platform engineering - gc launch',
+                'nike-domain': 'gc-cdn-antibots',
+                'nike-application': 'bots-taijitu-glue-waf-entry',
+                'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'nike-owner': 'frank.zhao@nike.com',
+                'nike-environment': 'prod',
+            ],
+            aws: [
+                accountId: '439413396736',
+                awsRole: 'NIKE.cicd.tool',
+                region: 'cn-northwest-1',
+            ],
+            s3: [
+                scriptUpload : [
+                    bucket          : 'bots-taijitu-prod-439413396736-etl-script',
+                    target          : 'etl-waf/entry/waf_entry.py',
+                    source          : './etl-waf/entry/waf_entry.py'
+                ],
+                jksUpload : [
+                    bucket          : 'bots-taijitu-prod-439413396736-etl-script',
+                    target          : 'etl-waf/entry/prod.kafka.truststore.jks',
+                    source          : './etl-waf/entry/prod.kafka.truststore.jks'
+                ]
+            ],
+            lambda: [
+                stackname       : 'bots-taijitu-waf-entry-job-resource',
+                templateFile    : 'cloudformation/waf_entry_resource.yaml',
+                s3Bucket        : 'bots-taijitu-prod-439413396736-etl-script',
+                s3Prefix        : 'etl-waf/entry/',
+                cfAssumeRole    : 'arn:aws-cn:iam::439413396736:role/NIKE.cicd.deploy',
+                parameters      : [
+                    Env         : 'test',
+                    ScriptPath : 's3://bots-taijitu-prod-439413396736-etl-script/etl-waf/entry/waf_entry.py',
+                    KafkaBootstrapServers : 'alikafka-post-cn-li93yay7t001-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-3.alikafka.aliyuncs.com:9093',
+                    KafkaUserName : 'aliWafToTaijitu',
+                    KafkaPassword : 'aliWafToTaijitu123',
+                    KafkaSslTruststoreS3Location : 's3://bots-taijitu-prod-439413396736-etl-script/etl-waf/entry/prod.kafka.truststore.jks',
+                    KafkaSslTruststoreLocalLocation : '/tmp/test.kafka.truststore.jks',
+                    KafkaSslTruststorePassword : 'KafkaOnsClient',
+                    KafkaSubscribe: 'ali_waf',
+                    DataLocation : 's3://bots-taijitu-prod-439413396736-flatted-data/waf-entry/data',
+                    CheckPointLocation : 's3://bots-taijitu-prod-439413396736-flatted-data/waf-entry/checkpoint'
+                ],
+            ],
+            tags: [
+                'nike-environment': 'test',
+                'costcenter': '161961',
+                'classification': 'sliver',
+                'email': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'owner': 'gc-cdn-antibots',
+                'nike-department': 'platform engineering - gc launch',
+                'nike-domain': 'gc-cdn-antibots',
+                'nike-application': 'bots-taijitu-glue-waf-entry',
+                'nike-distributionlist': 'Lst-gc-cdn-antibots.admin@nike.com',
+                'nike-owner': 'frank.zhao@nike.com',
+                'nike-environment': 'prod',
             ],
         ]
     ]
