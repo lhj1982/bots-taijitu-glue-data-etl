@@ -127,11 +127,11 @@ def config = [
                 parameters      : [
                     Env         : 'test',
                     ScriptPath : 's3://bots-taijitu-prod-439413396736-etl-script/etl-waf/entry/waf_entry.py',
-                    KafkaBootstrapServers : 'alikafka-post-cn-li93yay7t001-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-li93yay7t001-3.alikafka.aliyuncs.com:9093',
+                    KafkaBootstrapServers : 'alikafka-post-cn-53y3ymkc2002-1.alikafka.aliyuncs.com:9093,alikafka-post-cn-53y3ymkc2002-2.alikafka.aliyuncs.com:9093,alikafka-post-cn-53y3ymkc2002-3.alikafka.aliyuncs.com:9093',
                     KafkaUserName : 'aliWafToTaijitu',
                     KafkaPassword : 'aliWafToTaijitu123',
                     KafkaSslTruststoreS3Location : 's3://bots-taijitu-prod-439413396736-etl-script/etl-waf/entry/prod.kafka.truststore.jks',
-                    KafkaSslTruststoreLocalLocation : '/tmp/test.kafka.truststore.jks',
+                    KafkaSslTruststoreLocalLocation : '/tmp/prod.kafka.truststore.jks',
                     KafkaSslTruststorePassword : 'KafkaOnsClient',
                     KafkaSubscribe: 'ali_waf',
                     DataLocation : 's3://bots-taijitu-prod-439413396736-flatted-data/waf-entry/data',
