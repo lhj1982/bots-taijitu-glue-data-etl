@@ -63,6 +63,10 @@ Resources:
               Type: string
             - Name: retailPickupId
               Type: string
+            - Name: umid
+              Type: string
+            - Name: x-nike-upmid
+              Type: string
             - Name: host
               Type: string
             - Name: http_user_agent
@@ -77,8 +81,6 @@ Resources:
               Type: string
             - Name: request_method
               Type: string
-            - Name: request_body
-              Type: string
             - Name: request_path
               Type: string
             - Name: request_traceid
@@ -86,6 +88,12 @@ Resources:
             - Name: time
               Type: string
             - Name: user_id
+              Type: string
+            - Name: request_body
+              Type: string
+            - Name: wxbb_info_tbl
+              Type: string
+            - Name: request_header
               Type: string
             - Name: shipping_fulfillmentAnnotation
               Type: string

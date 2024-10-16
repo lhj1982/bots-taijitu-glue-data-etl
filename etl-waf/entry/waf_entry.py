@@ -154,6 +154,14 @@ request_body_schema = StructType([
     ]), nullable=True)
 ])
 
+wxbb_info_tbl_schema = StructType([
+    StructField("umid", StringType(), nullable=True)
+])
+
+request_header_schema = StructType([
+    StructField("x-nike-upmid", StringType(), nullable=True),
+])
+
 # the format of message form kafka: request_path(path), request_method(method), request_body(json)...
 df = spark.readStream.format("kafka") \
     .options(**kafka_params) \
@@ -173,12 +181,16 @@ df = spark.readStream.format("kafka") \
     .withColumn("time", regexp_extract(col("value"), r"time\((.*?)\)", 1)) \
     .withColumn("user_id", regexp_extract(col("value"), r"user_id\((.*?)\)", 1)) \
     .withColumn("wxbb_info_tbl", regexp_extract(col("value"), r"wxbb_info_tbl\((.*?)\)", 1)) \
+    .withColumn("request_header", regexp_extract(col("value"), r"request_header\((.*?)\)", 1)) \
     .drop(col("value")) \
     .where((col("request_path").like("/launch/entries%")) & (col("request_method") == "POST")) \
     .withColumn('requestBody', from_json(col('request_body'), request_body_schema)) \
-    .select(col('requestBody.*'), col("host"), col("http_user_agent"), col("https"), col("http_cookie"),
-            col("real_client_ip"), col("status"), col("request_method"), col("request_body"), col("request_path"),
-            col("request_traceid"), col("time"), col("user_id")) \
+    .withColumn('wxbbInfoTbl', from_json(col('wxbb_info_tbl'), wxbb_info_tbl_schema)) \
+    .withColumn('requestHeader', from_json(col('request_header'), request_header_schema)) \
+    .select(col("requestBody.*"), col("wxbbInfoTbl.*"), col("requestHeader.*"),
+            col("host"), col("http_user_agent"), col("https"), col("http_cookie"), col("real_client_ip"), col("status"),
+            col("request_method"), col("request_path"), col("request_traceid"), col("time"), col("user_id"),
+            col("request_body"), col("wxbb_info_tbl"), col("request_header")) \
 
 def flatten(df):
     # compute Complex Fields (Lists and Structs) in Schema
