@@ -63,6 +63,30 @@ Resources:
               Type: string
             - Name: retailPickupId
               Type: string
+            - Name: host
+              Type: string
+            - Name: http_user_agent
+              Type: string
+            - Name: https
+              Type: string
+            - Name: http_cookie
+              Type: string
+            - Name: real_client_ip
+              Type: string
+            - Name: status
+              Type: string
+            - Name: request_method
+              Type: string
+            - Name: request_body
+              Type: string
+            - Name: request_path
+              Type: string
+            - Name: request_traceid
+              Type: string
+            - Name: time
+              Type: string
+            - Name: user_id
+              Type: string
             - Name: shipping_fulfillmentAnnotation
               Type: string
             - Name: invoiceInfo_type
@@ -78,10 +102,6 @@ Resources:
             - Name: retailPickupPerson_givenName
               Type: string
             - Name: retailPickupPerson_familyName
-              Type: string
-            - Name: request_path
-              Type: string
-            - Name: request_method
               Type: string
             - Name: shipping_recipient_firstName
               Type: string
@@ -156,8 +176,6 @@ Resources:
             - Name: totals_taxes_details_valueAddedServices_tax
               Type: string
             - Name: totals_taxes_details_valueAddedServices_type
-              Type: string
-            - Name: current_timestamp
               Type: string
           Location: !FindInMap [ Accounts, !Ref ENV, DATAPATH ]
           InputFormat: org.apache.hadoop.mapred.TextInputFormat

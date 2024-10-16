@@ -4,7 +4,7 @@ from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
-from pyspark.sql.functions import col, from_json, explode_outer, current_timestamp, lpad, year, month, dayofmonth, \
+from pyspark.sql.functions import col, from_json, explode_outer, lpad, year, month, dayofmonth, \
     translate, regexp_extract
 from pyspark.sql.types import StringType, StructType, StructField, ArrayType, DoubleType
 
@@ -160,13 +160,25 @@ df = spark.readStream.format("kafka") \
     .load() \
     .selectExpr("CAST(value AS STRING)") \
     .withColumn("value", translate(col("value"), "\n\t", "")) \
-    .withColumn("request_path", regexp_extract(col("value"), r"request_path\((.*?)\)", 1)) \
+    .withColumn("host", regexp_extract(col("value"), r"host\((.*?)\)", 1)) \
+    .withColumn("http_user_agent", regexp_extract(col("value"), r"http_user_agent\((.*?)\)", 1)) \
+    .withColumn("https", regexp_extract(col("value"), r"https\((.*?)\)", 1)) \
+    .withColumn("http_cookie", regexp_extract(col("value"), r"http_cookie\((.*?)\)", 1)) \
+    .withColumn("real_client_ip", regexp_extract(col("value"), r"real_client_ip\((.*?)\)", 1)) \
+    .withColumn("status", regexp_extract(col("value"), r"status\((.*?)\)", 1)) \
     .withColumn("request_method", regexp_extract(col("value"), r"request_method\((.*?)\)", 1)) \
     .withColumn("request_body", regexp_extract(col("value"), r"request_body\((.*?)\)", 1)) \
+    .withColumn("request_path", regexp_extract(col("value"), r"request_path\((.*?)\)", 1)) \
+    .withColumn("request_traceid", regexp_extract(col("value"), r"request_traceid\((.*?)\)", 1)) \
+    .withColumn("time", regexp_extract(col("value"), r"time\((.*?)\)", 1)) \
+    .withColumn("user_id", regexp_extract(col("value"), r"user_id\((.*?)\)", 1)) \
+    .withColumn("wxbb_info_tbl", regexp_extract(col("value"), r"wxbb_info_tbl\((.*?)\)", 1)) \
     .drop(col("value")) \
     .where((col("request_path").like("/launch/entries%")) & (col("request_method") == "POST")) \
     .withColumn('requestBody', from_json(col('request_body'), request_body_schema)) \
-    .select(col('requestBody.*'), col("request_path"), col("request_method")) \
+    .select(col('requestBody.*'), col("host"), col("http_user_agent"), col("https"), col("http_cookie"),
+            col("real_client_ip"), col("status"), col("request_method"), col("request_body"), col("request_path"),
+            col("request_traceid"), col("time"), col("user_id")) \
 
 def flatten(df):
     # compute Complex Fields (Lists and Structs) in Schema
@@ -199,10 +211,9 @@ def flatten(df):
 
 flatten_df = flatten(df)
 
-query = flatten_df.withColumn("current_timestamp", current_timestamp()) \
-    .withColumn("year", year(col("current_timestamp"))) \
-    .withColumn("month", lpad(month(col("current_timestamp")), 2, "0")) \
-    .withColumn("day", lpad(dayofmonth(col("current_timestamp")), 2, "0")) \
+query = flatten_df.withColumn("year", year(col("time"))) \
+    .withColumn("month", lpad(month(col("time")), 2, "0")) \
+    .withColumn("day", lpad(dayofmonth(col("time")), 2, "0")) \
     .writeStream \
     .outputMode('append') \
     .format("csv") \
