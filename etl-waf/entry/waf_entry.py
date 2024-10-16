@@ -5,7 +5,7 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.sql.functions import col, from_json, explode_outer, current_timestamp, lpad, year, month, dayofmonth, \
-    translate, regexp_replace
+    translate, regexp_extract
 from pyspark.sql.types import StringType, StructType, StructField, ArrayType, DoubleType
 
 
@@ -154,15 +154,19 @@ request_body_schema = StructType([
     ]), nullable=True)
 ])
 
+# the format of message form kafka: request_path(path), request_method(method), request_body(json)...
 df = spark.readStream.format("kafka") \
     .options(**kafka_params) \
     .load() \
     .selectExpr("CAST(value AS STRING)") \
     .withColumn("value", translate(col("value"), "\n\t", "")) \
-    .withColumn("value", regexp_replace(col("value"), "^\"", "")) \
-    .withColumn("value", regexp_replace(col("value"), "\"$", "")) \
-    .withColumn('requestBody', from_json(col('value'), request_body_schema)) \
-    .select(col('requestBody.*')) \
+    .withColumn("request_path", regexp_extract(col("value"), r"request_path\((.*?)\)", 1)) \
+    .withColumn("request_method", regexp_extract(col("value"), r"request_method\((.*?)\)", 1)) \
+    .withColumn("request_body", regexp_extract(col("value"), r"request_body\((.*?)\)", 1)) \
+    .drop(col("value")) \
+    .where((col("request_path").like("/launch/entries%")) & (col("request_method") == "POST")) \
+    .withColumn('requestBody', from_json(col('request_body'), request_body_schema)) \
+    .select(col('requestBody.*'), col("request_path"), col("request_method")) \
 
 def flatten(df):
     # compute Complex Fields (Lists and Structs) in Schema

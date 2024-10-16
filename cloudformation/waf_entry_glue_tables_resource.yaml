@@ -79,6 +79,10 @@ Resources:
               Type: string
             - Name: retailPickupPerson_familyName
               Type: string
+            - Name: request_path
+              Type: string
+            - Name: request_method
+              Type: string
             - Name: shipping_recipient_firstName
               Type: string
             - Name: shipping_recipient_altFirstName
